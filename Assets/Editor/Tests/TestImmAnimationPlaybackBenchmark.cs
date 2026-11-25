@@ -251,24 +251,7 @@ namespace TiltBrush.Tests
                 new[] { drawings * FramesPerDrawing }, Enumerable.Repeat(FramesPerDrawing, drawings).ToArray()
             }, new List<bool> { true, true });
 
-            var cameraObject = new GameObject("IMM drawing transition camera");
-            var camera = cameraObject.AddComponent<Camera>();
-            var gameCamera = App.VrSdk.GetVrCamera();
-            camera.CopyFrom(gameCamera);
-            camera.transform.SetPositionAndRotation(gameCamera.transform.position, gameCamera.transform.rotation);
-            camera.enabled = false;
-            camera.stereoTargetEye = StereoTargetEyeMask.None;
-            camera.clearFlags = CameraClearFlags.SolidColor;
-            camera.backgroundColor = Color.black;
-            camera.orthographic = false;
-            camera.fieldOfView = 35;
-            camera.nearClipPlane = .1f;
-            camera.farClipPlane = 10f;
-            camera.allowMSAA = camera.allowHDR = false;
-            camera.GetUniversalAdditionalCameraData().renderPostProcessing = false;
-            camera.cullingMask = 1 << captureLayer;
-            var target = RenderTexture.GetTemporary(size, size, 24, RenderTextureFormat.ARGB32, RenderTextureReadWrite.sRGB);
-            camera.targetTexture = target;
+            var camera = CreateDrawingCaptureCamera(size, captureLayer, out var target);
             var pixels = new Texture2D(64, 64, TextureFormat.RGBA32, false);
             var canvases = new CanvasScript[drawings];
             var layers = new Dictionary<MeshRenderer, int>();
@@ -369,8 +352,166 @@ namespace TiltBrush.Tests
                 camera.targetTexture = null;
                 RenderTexture.ReleaseTemporary(target);
                 UnityEngine.Object.Destroy(pixels);
-                UnityEngine.Object.Destroy(cameraObject);
+                UnityEngine.Object.Destroy(camera.gameObject);
             }
+        }
+
+        [UnityTest, Category("AnimationPerformance")]
+        public IEnumerator RecolorAndUndo64Strokes() => MeasureDenseEdits(64);
+
+        [UnityTest, Category("AnimationPerformance")]
+        public IEnumerator RecolorAndUndo1024Strokes() => MeasureDenseEdits(1024);
+
+        private static IEnumerator MeasureDenseEdits(int strokes)
+        {
+            if (SystemInfo.graphicsDeviceType == GraphicsDeviceType.Null)
+                Assert.Ignore("Edit presentation requires a graphics device.");
+
+            const int captureLayer = 30;
+            var manager = App.Scene.animationUI_manager;
+            manager.StartTimeline();
+            manager.ConfigureDrawingRenderProxiesForTests(enabled: false);
+            manager.ConfigureLegacyAnimationTracks(new List<IReadOnlyList<int>> { new[] { 2 }, new[] { 2 } },
+                new List<bool> { true, true });
+            var canvas = manager.GetOrCreateContentCanvas(Track, 0);
+            var camera = CreateDrawingCaptureCamera(256, captureLayer, out var target);
+            var pixels = new Texture2D(64, 64, TextureFormat.RGBA32, false);
+            var layers = new Dictionary<MeshRenderer, int>();
+            var duplicates = UnityEngine.Object.FindObjectsByType<EventSystem>(FindObjectsSortMode.None)
+                .Where(system => system.isActiveAndEnabled && system != EventSystem.current).ToArray();
+            NativeImmRenderer nativeCamera = null;
+            try
+            {
+                foreach (var duplicate in duplicates) duplicate.enabled = false;
+                var stroke = AddStroke(canvas, camera, 0, 0, new Vector2(0, -.03f));
+                // The other strokes are visible on both sides of the camera's central readback area.
+                // Both sizes contain the same isolated, 16-point stroke at the center.
+                for (int i = 1; i < strokes; ++i)
+                {
+                    float x = (i % 32 - 15.5f) * .014f;
+                    float y = (i / 32 - 15.5f) * .017f;
+                    AddStroke(canvas, camera, 0, i, new Vector2(x + Mathf.Sign(x) * .15f, y));
+                }
+                foreach (var renderer in canvas.GetComponentsInChildren<MeshRenderer>(true))
+                {
+                    layers.Add(renderer, renderer.gameObject.layer);
+                    renderer.gameObject.layer = captureLayer;
+                }
+                var options = new SerializedObject(manager);
+                options.FindProperty("m_ImmPaintTrackIndex").intValue = Track;
+                options.FindProperty("m_UseImmPaintTrack").boolValue = true;
+                options.ApplyModifiedPropertiesWithoutUndo();
+                manager.SelectTimelineFrame(Track, 0);
+                manager.TimelineSlideDown(true);
+                using (var probe = new CameraProbe(camera))
+                {
+                    yield return probe.Until(() =>
+                    {
+                        if (nativeCamera == null) nativeCamera = NativeImmRenderer.RetainForCapture(camera);
+                        return nativeCamera != null && !canvas.gameObject.activeSelf;
+                    });
+                    var driver = typeof(AnimationUI_Manager).GetField("m_ImmPlayer", PrivateInstance).GetValue(manager);
+                    var document = (ImmDocument)driver.GetType().GetField("_document", PrivateInstance).GetValue(driver);
+                    int layer = document.GetLayersManaged().Single(info => info.Type == ImmDocument.LayerType.Paint).Id;
+                    Assert.AreEqual(0, ImmLiveDrawingEdits.GetFrameDrawing(document.DocumentId, layer, 0, out var handle));
+                    yield return probe.Until(() => true);
+                    Assert.AreEqual(0, ReadDrawingColor(target, pixels, 3), "Expected the original red stroke.");
+                    for (int sample = 0; sample <= 5; ++sample)
+                    {
+                        foreach (bool undo in new[] { false, true })
+                        {
+                            string operation = undo ? "undo" : "recolor";
+                            int expectedColor = undo ? 0 : 2; // Red and blue on a three-hue circle.
+                            ulong prior = Presented(document);
+                            manager.TimelineSlideDown(false);
+                            Debug.Log($"[OB_IMM_DENSE_BEGIN] {JsonConvert.SerializeObject(new { strokes, operation, sample, markerTicks = Stopwatch.GetTimestamp(), frequency = Stopwatch.Frequency })}");
+                            long startTicks = Stopwatch.GetTimestamp();
+                            double start = (double)startTicks / Stopwatch.Frequency;
+                            if (undo) SketchMemoryScript.m_Instance.StepBack();
+                            else SketchMemoryScript.m_Instance.PerformAndRecordCommand(new RepaintStrokeCommand(stroke,
+                                Color.blue, stroke.m_BrushGuid, stroke.m_BrushSize));
+                            double commandMs = (Now - start) * 1000;
+                            manager.TimelineSlideDown(true);
+
+                            double? requestedMs = null, preparedMs = null, presentedMs = null, firstCanvasMs = null, nativeMs = null;
+                            int? requestedRender = null, preparedRender = null, presentedRender = null;
+                            int renders = 0;
+                            ulong finalRevision = 0;
+                            probe.AfterRender = stamp =>
+                            {
+                                if (nativeMs.HasValue) return;
+                                ++renders;
+                                double elapsed = (stamp - start) * 1000;
+                                Assert.AreEqual(0, ImmLiveDrawingEdits.GetRevisions(document.DocumentId, out var revisions));
+                                if (revisions.Requested > prior) { requestedMs ??= elapsed; requestedRender ??= renders; }
+                                if (revisions.Prepared > prior) { preparedMs ??= elapsed; preparedRender ??= renders; }
+                                if (revisions.Presented > prior) { presentedMs ??= elapsed; presentedRender ??= renders; }
+                                if (canvas.gameObject.activeSelf)
+                                {
+                                    if (!firstCanvasMs.HasValue && sample == 0)
+                                        Assert.AreEqual(expectedColor, ReadDrawingColor(target, pixels, 3), $"First canvas {operation} render.");
+                                    firstCanvasMs ??= elapsed;
+                                    return;
+                                }
+                                Assert.Greater(revisions.Presented, prior, $"IMM owned a stale {operation} render.");
+                                nativeMs = elapsed;
+                                finalRevision = revisions.Presented;
+                                var paint = document.GetEditableLayerStates().Single(state => state.id == layer);
+                                Assert.AreEqual(0, ImmLiveDrawingEdits.GetDrawing(document.DocumentId, layer, paint.drawing, out var actual));
+                                Assert.AreEqual(handle, actual, $"Drawing identity after {operation}.");
+                                Assert.AreNotEqual(0, paint.visible);
+                                Assert.That(paint.opacity, Is.EqualTo(1f).Within(.001f));
+                                Assert.AreEqual(expectedColor, ReadDrawingColor(target, pixels, 3), $"First IMM {operation} render.");
+                            };
+                            yield return probe.Until(() => nativeMs.HasValue);
+                            probe.AfterRender = null;
+                            var result = new
+                            {
+                                strokes, operation, sample, startTicks, frequency = Stopwatch.Frequency, commandMs,
+                                requestedMs, requestedRender, preparedMs, preparedRender, presentedMs, presentedRender,
+                                firstVisibleMs = firstCanvasMs ?? nativeMs, firstCanvasMs, nativeMs, renders, handle, prior, finalRevision
+                            };
+                            Debug.Log($"[OB_IMM_DENSE_EDIT] {JsonConvert.SerializeObject(result)}");
+                        }
+                    }
+                }
+            }
+            finally
+            {
+                manager.TimelineSlideDown(false);
+                if (nativeCamera != null) nativeCamera.Release();
+                foreach (var duplicate in duplicates)
+                    if (duplicate != null) duplicate.enabled = true;
+                foreach (var pair in layers)
+                    if (pair.Key != null) pair.Key.gameObject.layer = pair.Value;
+                camera.targetTexture = null;
+                RenderTexture.ReleaseTemporary(target);
+                UnityEngine.Object.Destroy(pixels);
+                UnityEngine.Object.Destroy(camera.gameObject);
+            }
+        }
+
+        private static Camera CreateDrawingCaptureCamera(int size, int captureLayer, out RenderTexture target)
+        {
+            var cameraObject = new GameObject("IMM drawing capture camera");
+            var camera = cameraObject.AddComponent<Camera>();
+            var gameCamera = App.VrSdk.GetVrCamera();
+            camera.CopyFrom(gameCamera);
+            camera.transform.SetPositionAndRotation(gameCamera.transform.position, gameCamera.transform.rotation);
+            camera.enabled = false;
+            camera.stereoTargetEye = StereoTargetEyeMask.None;
+            camera.clearFlags = CameraClearFlags.SolidColor;
+            camera.backgroundColor = Color.black;
+            camera.orthographic = false;
+            camera.fieldOfView = 35;
+            camera.nearClipPlane = .1f;
+            camera.farClipPlane = 10f;
+            camera.allowMSAA = camera.allowHDR = false;
+            camera.GetUniversalAdditionalCameraData().renderPostProcessing = false;
+            camera.cullingMask = 1 << captureLayer;
+            target = RenderTexture.GetTemporary(size, size, 24, RenderTextureFormat.ARGB32, RenderTextureReadWrite.sRGB);
+            camera.targetTexture = target;
+            return camera;
         }
 
         // The four isolated strokes have equally spaced hues and sit at the center of the camera.
@@ -411,11 +552,12 @@ namespace TiltBrush.Tests
             return revisions.Presented;
         }
 
-        private static Stroke AddStroke(CanvasScript canvas, Camera camera, int drawing, int index)
+        private static Stroke AddStroke(CanvasScript canvas, Camera camera, int drawing, int index,
+            Vector2? position = null)
         {
             // Each canvas carries a different position and color. The grid fits in the registered camera's view.
-            float x = (index % 8 - 3.5f) * .08f + drawing * .003f;
-            float y = (index / 8 - 3.5f) * .08f;
+            float x = position?.x ?? ((index % 8 - 3.5f) * .08f + drawing * .003f);
+            float y = position?.y ?? ((index / 8 - 3.5f) * .08f);
             var local = canvas.transform;
             var forward = local.InverseTransformDirection(camera.transform.up);
             var normal = local.InverseTransformDirection(-camera.transform.forward);
