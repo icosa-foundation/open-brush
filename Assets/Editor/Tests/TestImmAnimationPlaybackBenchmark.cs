@@ -416,6 +416,10 @@ namespace TiltBrush.Tests
                     Assert.AreEqual(0, ImmLiveDrawingEdits.GetFrameDrawing(document.DocumentId, layer, 0, out var handle));
                     yield return probe.Until(() => true);
                     Assert.AreEqual(0, ReadDrawingColor(target, pixels, 3), "Expected the original red stroke.");
+                    // At both densities the lower left contains only unchanged, red strokes.
+                    void CheckNeighborPixels() => Assert.AreEqual(0,
+                        ReadDrawingColor(target, pixels, 3, new Vector2Int(18, 34)), "Neighboring strokes disappeared or changed color.");
+                    CheckNeighborPixels();
                     for (int sample = 0; sample <= 5; ++sample)
                     {
                         foreach (bool undo in new[] { false, true })
@@ -449,7 +453,10 @@ namespace TiltBrush.Tests
                                 if (canvas.gameObject.activeSelf)
                                 {
                                     if (!firstCanvasMs.HasValue && sample == 0)
+                                    {
                                         Assert.AreEqual(expectedColor, ReadDrawingColor(target, pixels, 3), $"First canvas {operation} render.");
+                                        CheckNeighborPixels();
+                                    }
                                     firstCanvasMs ??= elapsed;
                                     return;
                                 }
@@ -462,6 +469,7 @@ namespace TiltBrush.Tests
                                 Assert.AreNotEqual(0, paint.visible);
                                 Assert.That(paint.opacity, Is.EqualTo(1f).Within(.001f));
                                 Assert.AreEqual(expectedColor, ReadDrawingColor(target, pixels, 3), $"First IMM {operation} render.");
+                                if (sample == 0) CheckNeighborPixels();
                             };
                             yield return probe.Until(() => nativeMs.HasValue);
                             probe.AfterRender = null;
@@ -516,14 +524,14 @@ namespace TiltBrush.Tests
 
         // The four isolated strokes have equally spaced hues and sit at the center of the camera.
         // Read its existing target; rendering again here would miss a one-frame stale drawing.
-        private static int ReadDrawingColor(RenderTexture target, Texture2D pixels, int drawings)
+        private static int ReadDrawingColor(RenderTexture target, Texture2D pixels, int drawings, Vector2Int? origin = null)
         {
             var previous = RenderTexture.active;
             try
             {
                 RenderTexture.active = target;
-                pixels.ReadPixels(new Rect((target.width - pixels.width) / 2, (target.height - pixels.height) / 2,
-                    pixels.width, pixels.height), 0, 0, false);
+                var corner = origin ?? new Vector2Int((target.width - pixels.width) / 2, (target.height - pixels.height) / 2);
+                pixels.ReadPixels(new Rect(corner.x, corner.y, pixels.width, pixels.height), 0, 0, false);
                 Vector3 sum = Vector3.zero;
                 foreach (Color32 p in pixels.GetRawTextureData<Color32>())
                 {
