@@ -164,7 +164,7 @@ namespace TiltBrush
         }
         public void Continue()
         {
-            RequireReady();
+            if (!CanChangeTransport("continue")) return;
             if (Document == null)
             {
                 SetPlayingInternal(true);
@@ -178,7 +178,7 @@ namespace TiltBrush
         }
         public void Play()
         {
-            RequireReady();
+            if (!CanChangeTransport("play")) return;
             if (Document != null && Document.GetStateInfo().Playback != ImmDocument.PlaybackState.Finished) Continue();
             else
             {
@@ -186,7 +186,25 @@ namespace TiltBrush
                 MarkPlaybackChanged();
             }
         }
-        public void Pause() { RequireReady(); SetPlayingInternal(false); MarkPlaybackChanged(); }
+        public void Pause()
+        {
+            if (!CanChangeTransport("pause")) return;
+            SetPlayingInternal(false);
+            MarkPlaybackChanged();
+        }
+
+        private bool CanChangeTransport(string action)
+        {
+            RequireReady();
+            // A clone on a hidden layer can have a saved clip before its first OnEnable.
+            if (Document == null && m_Gltf != null && m_Gltf.Initialized && !m_Gltf.HasPlaybackState)
+            {
+                Debug.LogError($"Cannot {action} this model before its animation is initialized.", this);
+                return false;
+            }
+            return true;
+        }
+
         private void SetPlayingInternal(bool playing)
         {
             m_Paused = !playing;
@@ -237,7 +255,8 @@ namespace TiltBrush
         }
         public void Seek(double time)
         {
-            RequireReady(); ValidateTime(time);
+            if (!CanChangeTransport("seek")) return;
+            ValidateTime(time);
             if (time > Length) throw new ArgumentOutOfRangeException(nameof(time));
             if (Document != null)
             {
@@ -276,7 +295,7 @@ namespace TiltBrush
         }
         public void SetLoop(bool loop)
         {
-            RequireReady();
+            if (!CanChangeTransport("change looping on")) return;
             if (m_Gltf == null) throw new InvalidOperationException("Loop control is supported for glTF animation clips");
             m_Gltf.Loop = loop;
             MarkPlaybackChanged();

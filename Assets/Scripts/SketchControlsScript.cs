@@ -5634,8 +5634,11 @@ namespace TiltBrush
             return false;
         }
 
+        public int SketchGeneration { get; private set; }
+
         public void NewSketch(bool fade)
         {
+            ++SketchGeneration;
             NativeImmImport.Unload();
             bool keepSceneTransform = m_DisableWorldGrabbing;
             LightsControlScript.m_Instance.DiscoMode = false;

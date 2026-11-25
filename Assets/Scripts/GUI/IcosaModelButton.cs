@@ -91,13 +91,18 @@ namespace TiltBrush
 
         protected override void OnButtonPressed()
         {
+            int sketchGeneration = SketchControlsScript.m_Instance.SketchGeneration;
             if (m_IcosaAsset.HasImm)
             {
                 string assetId = m_IcosaAsset.AssetId;
                 Quaternion rotation = m_PreviewBaseRotation;
                 App.IcosaAssetCatalog.RequestImmModel(assetId, model =>
                 {
-                    if (this != null) SpawnValidModel(model, rotation);
+                    // The catalog can finish caching the IMM after the sketch has been replaced.
+                    if (this != null && sketchGeneration == SketchControlsScript.m_Instance.SketchGeneration)
+                    {
+                        SpawnValidModel(model, rotation);
+                    }
                 });
                 return;
             }
@@ -105,11 +110,11 @@ namespace TiltBrush
             {
                 return;
             }
-            StartCoroutine(SpawnModelCoroutine("button"));
+            StartCoroutine(SpawnModelCoroutine("button", sketchGeneration));
         }
 
         // Emits user-visible error on failure
-        protected IEnumerator SpawnModelCoroutine(string reason)
+        private IEnumerator SpawnModelCoroutine(string reason, int sketchGeneration)
         {
             if (m_Model == null)
             {
@@ -127,6 +132,14 @@ namespace TiltBrush
             while ((model = App.IcosaAssetCatalog.GetModel(assetId)) == null)
             {
                 yield return null;
+                if (sketchGeneration != SketchControlsScript.m_Instance.SketchGeneration)
+                {
+                    if (assetId == m_IcosaAsset?.AssetId)
+                    {
+                        m_LoadingOverlay.SetActive(App.IcosaAssetCatalog.IsLoading(assetId));
+                    }
+                    yield break;
+                }
             }
             // We only want to disable the loading overlay if the button is still referring to the same
             // asset.
@@ -140,7 +153,15 @@ namespace TiltBrush
             {
                 // The model might be in the "loaded with error" state, but it seems harmless to try again.
                 // If the user keeps clicking, we'll keep trying.
-                yield return model.LoadFullyCoroutine(reason);
+                var load = model.LoadFullyCoroutine(reason);
+                using (load as System.IDisposable)
+                {
+                    while (load.MoveNext())
+                    {
+                        yield return load.Current;
+                        if (sketchGeneration != SketchControlsScript.m_Instance.SketchGeneration) yield break;
+                    }
+                }
                 Debug.Assert(model.m_Valid || model.Error != null);
             }
 
