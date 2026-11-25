@@ -21,13 +21,14 @@ namespace TiltBrush
     // Replaces the target camera's rendered output with the stage-5 compositor's
     // result, when both a CG capture and a plate are available - stage 6, step 3
     // of POSTPROD_PREVIEW_PLAN.md. Must live on the camera's own GameObject
-    // (Unity's OnRenderImage requirement), so PostProductionPreviewController
+    // so the URP renderer feature can identify the preview camera. The controller
     // adds/removes this component dynamically rather than owning the logic itself.
     //
     // Falls back to passing the camera's normal render through untouched if the CG
     // capture or plate hasn't been set up yet, so postprod.preview alone (stages 1-2)
     // keeps working exactly as already tested, and only "upgrades" to a full
     // composite once plate files are also configured.
+    [DefaultExecutionOrder(1000)] // Prepare the image after the controller updates live CG.
     public class PostProductionCompositeImageEffect : MonoBehaviour
     {
         public static bool NaiveMode;
@@ -81,7 +82,7 @@ namespace TiltBrush
 
         // Called whenever a fresh CG capture has been written (see
         // PostProductionPreviewController.RefreshCgCapture), so the next
-        // OnRenderImage reloads it from disk instead of reusing a stale texture.
+        // preview frame reloads it from disk instead of reusing a stale texture.
         public static void InvalidateCgCache()
         {
             s_CgDirty = true;
@@ -94,7 +95,39 @@ namespace TiltBrush
             s_PlateDirty = true;
         }
 
-        private void OnRenderImage(RenderTexture source, RenderTexture destination)
+        private RenderTexture m_Output;
+        public Texture PreviewImage { get; private set; }
+
+        private void LateUpdate()
+        {
+            var previous = RenderTexture.active;
+            PreviewImage = null;
+            try
+            {
+                PreparePreview();
+            }
+            finally
+            {
+                RenderTexture.active = previous;
+            }
+        }
+
+        private RenderTexture GetOutput()
+        {
+            var camera = GetComponent<Camera>();
+            int width = Mathf.Max(1, camera.pixelWidth);
+            int height = Mathf.Max(1, camera.pixelHeight);
+            if (m_Output == null || m_Output.width != width || m_Output.height != height)
+            {
+                if (m_Output != null) { m_Output.Release(); Destroy(m_Output); }
+                m_Output = new RenderTexture(width, height, 0,
+                    camera.allowHDR ? RenderTextureFormat.DefaultHDR : RenderTextureFormat.Default);
+            }
+            PreviewImage = m_Output;
+            return m_Output;
+        }
+
+        private void PreparePreview()
         {
             if (CgOnlyMode)
             {
@@ -104,7 +137,7 @@ namespace TiltBrush
                 // rather than the main camera, so it matches the composite exactly:
                 // undistorted working frame, spatial offsets (global and per layer).
                 bool liveCg = PostProductionLiveCg.Enabled && PostProductionLiveCg.HasFrame;
-                Graphics.Blit(liveCg ? (Texture)PostProductionLiveCg.ColorRT : source, destination);
+                if (liveCg) { PreviewImage = PostProductionLiveCg.ColorRT; }
                 return;
             }
 
@@ -134,7 +167,6 @@ namespace TiltBrush
                 if (state == PostProductionPlateCache.PlateState.Loading)
                 {
                     // Nothing cached yet (first frames after enabling): show the camera view.
-                    Graphics.Blit(source, destination);
                     return;
                 }
                 plateConfigured = true;
@@ -159,10 +191,10 @@ namespace TiltBrush
                 // No CG capture yet, or postprod.preview.plate was never called -
                 // legitimate startup state, unrelated to "missing media" below.
                 // postprod.preview alone (stages 1-2) keeps working as a plain view.
-                Graphics.Blit(source, destination);
                 return;
             }
 
+            var destination = GetOutput();
             if (!hasPlateColor)
             {
                 // Plate WAS explicitly configured but its color file is missing or
@@ -378,6 +410,7 @@ namespace TiltBrush
 
         private void OnDestroy()
         {
+            if (m_Output != null) { m_Output.Release(); Destroy(m_Output); }
             DestroyIfNotNull(ref m_CgColorTex);
             DestroyIfNotNull(ref m_CgDepthTex);
             DestroyIfNotNull(ref m_PlateColorTex);

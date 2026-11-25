@@ -17,10 +17,15 @@ namespace TiltBrush
         [SerializeField] private Shader m_TiltShiftShader;
         private Material m_TiltShiftMaterial;
 
+        [SerializeField] private Shader m_PreviewShader;
+        private Material m_PreviewMaterial;
+
         public override void Create()
         {
+            CoreUtils.Destroy(m_PreviewMaterial);
             CoreUtils.Destroy(m_VignetteMaterial);
             CoreUtils.Destroy(m_TiltShiftMaterial);
+            m_PreviewMaterial = m_PreviewShader != null ? CoreUtils.CreateEngineMaterial(m_PreviewShader) : null;
             m_VignetteMaterial = m_VignetteShader != null
                 ? CoreUtils.CreateEngineMaterial(m_VignetteShader) : null;
             m_TiltShiftMaterial = m_TiltShiftShader != null
@@ -29,6 +34,7 @@ namespace TiltBrush
 
         protected override void Dispose(bool disposing)
         {
+            CoreUtils.Destroy(m_PreviewMaterial);
             CoreUtils.Destroy(m_VignetteMaterial);
             CoreUtils.Destroy(m_TiltShiftMaterial);
         }
@@ -36,6 +42,18 @@ namespace TiltBrush
         public override void AddRenderPasses(ScriptableRenderer renderer, ref RenderingData renderingData)
         {
             Camera camera = renderingData.cameraData.camera;
+            if (camera != null && m_PreviewMaterial != null &&
+                camera.TryGetComponent(out PostProductionCompositeImageEffect preview) &&
+                preview.isActiveAndEnabled && preview.PreviewImage != null)
+            {
+                var properties = new MaterialPropertyBlock();
+                properties.SetTexture("_PreviewImage", preview.PreviewImage);
+                renderer.EnqueuePass(new CaptureEffectPass(m_PreviewMaterial, properties, "Post-production preview")
+                {
+                    renderPassEvent = RenderPassEvent.AfterRenderingPostProcessing + 1
+                });
+            }
+
             if (camera == null || renderingData.cameraData.cameraType != CameraType.Game ||
                 !renderingData.cameraData.postProcessEnabled ||
                 (camera.TryGetComponent(out RenderWrapper wrapper) && wrapper.SuppressPostEffects))
