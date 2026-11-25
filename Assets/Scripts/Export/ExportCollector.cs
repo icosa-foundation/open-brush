@@ -593,6 +593,11 @@ namespace TiltBrush
         static IEnumerable<PrefabGeometry[]> GetPrefabGameObjs(
             SceneStatePayload payload, Model prefab)
         {
+            // Each procedural widget owns its model and keeps its template materials in sync with edits.
+            // Snapshot those materials for this export, including when instances share a shape definition.
+            var collector = prefab.GetLocation().IsGenerated()
+                ? new ImportMaterialCollector(string.Empty, $"procedural-{payload.idGenerator.GetIdFromInstanceId(prefab.m_ModelParent.gameObject)}")
+                : null;
             foreach ((MeshFilter meshFilter, int index) in prefab.GetMeshes().WithIndex())
             {
                 // Previous code let these nulls pass silently. I'm not sure why; it was definitely
@@ -610,9 +615,17 @@ namespace TiltBrush
                     Debug.LogError("Internal error: null mesh renderer");
                     yield return null;
                 }
+                var materials = renderer.sharedMaterials;
+                if (collector != null)
+                {
+                    foreach (var material in materials)
+                    {
+                        if (collector.GetExportableMaterial(material) == null) { collector.Add(material); }
+                    }
+                }
                 yield return GetPrefabGameObjMeshes(
-                    meshFilter.sharedMesh, renderer.sharedMaterials,
-                    payload, prefab, index).ToArray();
+                    meshFilter.sharedMesh, materials,
+                    payload, prefab, index, collector).ToArray();
             }
         }
 
