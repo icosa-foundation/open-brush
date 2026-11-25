@@ -1363,7 +1363,7 @@ namespace TiltBrush.FrameAnimation
             });
         }
 
-        public void AddAnimationPath(CameraPathWidget pathwidget, int trackNum, int frameNum)
+        internal CameraPathWidget AttachAnimationPath(CameraPathWidget pathwidget, int trackNum, int frameNum)
         {
             GameObject moveTransform = pathwidget.gameObject;
             moveTransform.transform.SetParent(m_AnimationPathCanvas.transform);
@@ -1374,11 +1374,6 @@ namespace TiltBrush.FrameAnimation
             pathwidget.Path.timelineLocation = Loc;
 
             CameraPathWidget previousPath = Timeline[Loc.Item1].Frames[Loc.Item2].AnimatedPath;
-            if (previousPath != null)
-            {
-                WidgetManager.m_Instance.DeleteCameraPath(previousPath);
-            }
-
             int i = GetFollowingFrameIndex(Loc.Item1, Loc.Item2).Item2 - Loc.Item2;
             ApplySparseTimelineEdit(tracks =>
             {
@@ -1388,15 +1383,12 @@ namespace TiltBrush.FrameAnimation
                         value.DrawingId, value.Deleted, value.FrameExists,
                         pathwidget, value.SpanIdentity));
             });
+            return previousPath;
         }
 
         public void AddAnimationPath(CameraPathWidget pathwidget)
         {
-            GameObject moveTransform = pathwidget.gameObject;
-            moveTransform.transform.SetParent(m_AnimationPathCanvas.transform);
-            pathwidget.SetPathAnimation(true);
             (int, int) Loc = GetCanvasLocation(App.Scene.ActiveCanvas);
-            pathwidget.Path.timelineLocation = Loc;
 
             if (!GetFrameFilled(Loc.Item1, Loc.Item2))
             {
@@ -1405,23 +1397,19 @@ namespace TiltBrush.FrameAnimation
                 return;
             }
 
-            CameraPathWidget previousPath = Timeline[Loc.Item1].Frames[Loc.Item2].AnimatedPath;
+            AddAnimationPath(pathwidget, Loc.Item1, Loc.Item2);
+            ResetTimeline();
+        }
+
+        public void AddAnimationPath(CameraPathWidget pathwidget, int trackNum, int frameNum)
+        {
+            CameraPathWidget previousPath = Timeline[trackNum].Frames[frameNum].AnimatedPath;
             if (previousPath != null)
             {
                 WidgetManager.m_Instance.DeleteCameraPath(previousPath);
             }
 
-            int i = GetFollowingFrameIndex(Loc.Item1, Loc.Item2).Item2 - Loc.Item2;
-            ApplySparseTimelineEdit(tracks =>
-            {
-                TransformSparseRange(
-                    tracks[Loc.Item1].Frames, Loc.Item2, i,
-                    value => new AnimationTimelineModel.FrameValue(
-                        value.DrawingId, value.Deleted, value.FrameExists,
-                        pathwidget, value.SpanIdentity));
-            });
-
-            ResetTimeline();
+            AttachAnimationPath(pathwidget, trackNum, frameNum);
         }
 
         public CanvasScript AddLayerRefresh(CanvasScript canvasAdding)

@@ -22,6 +22,7 @@ namespace TiltBrush
         private TrTransform m_WidgetTransform;
         private int m_TiltMeterCost;
         private (int, int)? m_AnimationPathLocation;
+        private CameraPathWidget m_ReplacedPath;
 
         public GrabWidget Widget { get { return m_Widget; } }
 
@@ -56,6 +57,11 @@ namespace TiltBrush
             {
                 m_AnimationPathLocation = App.Scene.animationUI_manager.GetAnimationPathLocation(path.Path);
                 App.Scene.animationUI_manager.DetachAnimationPath(path);
+                if (m_ReplacedPath != null && m_AnimationPathLocation.Value.Item1 >= 0)
+                {
+                    var location = m_AnimationPathLocation.Value;
+                    App.Scene.animationUI_manager.AttachAnimationPath(m_ReplacedPath, location.Item1, location.Item2);
+                }
             }
             m_Widget.Hide();
             WidgetManager.m_Instance.RefreshPinAndUnpinLists();
@@ -84,7 +90,7 @@ namespace TiltBrush
                     if (m_AnimationPathLocation.HasValue && m_AnimationPathLocation.Value.Item1 >= 0)
                     {
                         var location = m_AnimationPathLocation.Value;
-                        App.Scene.animationUI_manager.AddAnimationPath(path, location.Item1, location.Item2);
+                        m_ReplacedPath = App.Scene.animationUI_manager.AttachAnimationPath(path, location.Item1, location.Item2);
                     }
                     App.Switchboard.TriggerCameraPathCreated();
                 }

@@ -160,7 +160,7 @@ namespace TiltBrush
                 m_AnimationPathLocation.Value.Item1 >= 0)
             {
                 var location = m_AnimationPathLocation.Value;
-                App.Scene.animationUI_manager.AddAnimationPath(path, location.Item1, location.Item2);
+                App.Scene.animationUI_manager.AttachAnimationPath(path, location.Item1, location.Item2);
             }
             App.Scene?.animationUI_manager?.NotifyWidgetAdded(m_Widget);
             WidgetManager.m_Instance.RefreshPinAndUnpinLists();
