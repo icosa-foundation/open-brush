@@ -35,11 +35,24 @@ namespace TiltBrush.Tests
         private const string kLogPrefix = "[OB_ANIM_P3_INTEGRATION]";
         private const string kPlayModeOptionsKey = "OB_ANIM_TEST.PlayModeOptionsEnabled";
 
+        private const string kBatchInputKey = "OB_ANIM_TEST.BatchInput";
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
+        private static void AddBatchInputDevices()
+        {
+            if (!Application.isBatchMode || !SessionState.GetBool(kBatchInputKey, false)) return;
+            if (UnityEngine.InputSystem.Keyboard.current == null)
+                UnityEngine.InputSystem.InputSystem.AddDevice<UnityEngine.InputSystem.Keyboard>();
+            if (UnityEngine.InputSystem.Mouse.current == null)
+                UnityEngine.InputSystem.InputSystem.AddDevice<UnityEngine.InputSystem.Mouse>();
+        }
+
         internal static void PrepareRuntimeScene()
         {
             // These integration tests require fresh app singletons. With fast Play mode
             // enabled, the runner also loses its setup log scope across static cleanup.
             SessionState.SetBool(kPlayModeOptionsKey, EditorSettings.enterPlayModeOptionsEnabled);
+            SessionState.SetBool(kBatchInputKey, Application.isBatchMode);
             EditorSettings.enterPlayModeOptionsEnabled = false;
             // EditMode tests run in a bootstrap scene, not the previously open user scene.
             EditorSceneManager.OpenScene("Assets/Scenes/Main.unity", OpenSceneMode.Single);
@@ -52,6 +65,7 @@ namespace TiltBrush.Tests
         {
             EditorSettings.enterPlayModeOptionsEnabled = SessionState.GetBool(kPlayModeOptionsKey, true);
             SessionState.EraseBool(kPlayModeOptionsKey);
+            SessionState.EraseBool(kBatchInputKey);
         }
 
         [UnitySetUp]
@@ -91,6 +105,122 @@ namespace TiltBrush.Tests
         {
             if (Application.isPlaying) yield return new ExitPlayMode();
             RestoreRuntimeEditorSettings();
+        }
+
+
+        [UnityTest]
+        public IEnumerator ImmPaintTrackSplitAndUndoWhilePaused()
+        {
+            if (SystemInfo.graphicsDeviceType == UnityEngine.Rendering.GraphicsDeviceType.Null)
+                Assert.Ignore("The live IMM paint track needs a graphics device.");
+
+            var manager = App.Scene.animationUI_manager;
+            manager.StartTimeline();
+            manager.ConfigureLegacyAnimationTracks(
+                new List<IReadOnlyList<int>> { new[] { 4 }, new[] { 4 } },
+                new List<bool> { true, true });
+            var original = manager.GetOrCreateContentCanvas(1, 0);
+            var points = Enumerable.Range(0, 4).Select(i => new PointerManager.ControlPoint
+            {
+                m_Pos = Vector3.forward * (i * 0.1f),
+                m_Orient = Quaternion.identity,
+                m_Pressure = 1,
+                m_TimestampMs = (uint)i
+            }).ToArray();
+            var stroke = new Stroke
+            {
+                m_BrushGuid = new Guid(Quill.BRUSH_QUILL_CYLINDER),
+                m_Color = Color.red, m_BrushScale = 1, m_BrushSize = 0.1f,
+                m_ControlPoints = points, m_ControlPointsToDrop = new bool[points.Length]
+            };
+            stroke.Recreate(canvas: original);
+            Assert.IsNotNull(stroke.m_BatchSubset);
+            Assert.Greater(stroke.m_BatchSubset.m_VertLength, 0);
+            var memory = SketchMemoryScript.m_Instance;
+            memory.MemoryListAdd(stroke);
+
+            var options = new SerializedObject(manager);
+            options.FindProperty("m_ImmPaintTrackIndex").intValue = 1;
+            options.FindProperty("m_UseImmPaintTrack").boolValue = true;
+            options.ApplyModifiedPropertiesWithoutUndo();
+
+            IEnumerator ScrubToDrawing(int frame, CanvasScript expected)
+            {
+                manager.SelectTimelineFrame(1, frame);
+                manager.TimelineSlideDown(true);
+                Assert.AreSame(expected, manager.GetTimelineCanvas(1, frame));
+                var deadline = Time.realtimeSinceStartup + 30f;
+                // Batch Play mode has no Game view. Render through the registered game camera
+                // so URP can submit the native preparation and presentation passes.
+                var camera = App.VrSdk.GetVrCamera();
+                var previousTarget = camera.targetTexture;
+                var target = RenderTexture.GetTemporary(256, 256, 24);
+                try
+                {
+                    camera.targetTexture = target;
+                    while (expected.gameObject.activeSelf && Time.realtimeSinceStartup < deadline)
+                    {
+                        camera.Render();
+                        yield return null;
+                    }
+                }
+                finally
+                {
+                    camera.targetTexture = previousTarget;
+                    RenderTexture.ReleaseTemporary(target);
+                }
+                Assert.IsFalse(expected.gameObject.activeSelf, $"IMM did not take over frame {frame}.");
+                manager.TimelineSlideDown(false);
+                Assert.IsTrue(expected.gameObject.activeSelf, $"Frame {frame} was not restored for editing.");
+            }
+
+            yield return ScrubToDrawing(2, original);
+
+            // Read the player document driving this manager so a full reload cannot pass as a live edit.
+            var flags = BindingFlags.Instance | BindingFlags.NonPublic;
+            var driver = typeof(AnimationUI_Manager).GetField("m_ImmPlayer", flags).GetValue(manager);
+            var document = (ImmPlayer.ImmDocument)driver.GetType().GetField("_document", flags).GetValue(driver);
+            int layer = document.GetLayersManaged().Single(info => info.Type == ImmPlayer.ImmDocument.LayerType.Paint).Id;
+            ulong ReadFrame(int frame)
+            {
+                Assert.AreEqual(0, ImmPlayer.Authoring.ImmLiveDrawingEdits.GetFrameDrawing(document.DocumentId, layer, frame, out var handle));
+                return handle;
+            }
+            ulong PresentedRevision()
+            {
+                Assert.AreEqual(0, ImmPlayer.Authoring.ImmLiveDrawingEdits.GetRevisions(document.DocumentId, out var revisions));
+                return revisions.Presented;
+            }
+            ulong a = ReadFrame(0);
+            CollectionAssert.AreEqual(new[] { a, a, a, a }, Enumerable.Range(0, 4).Select(ReadFrame));
+
+            var split = new SplitFrameCommand();
+            Assert.IsTrue(split.IsAvailable, "The playhead should be inside a held paint drawing.");
+            memory.PerformAndRecordCommand(split);
+            var duplicate = manager.GetTimelineCanvas(1, 2);
+            Assert.AreNotSame(original, duplicate);
+            yield return ScrubToDrawing(0, original);
+            yield return ScrubToDrawing(2, duplicate);
+            ulong b = ReadFrame(2);
+            Assert.AreNotEqual(a, b);
+            CollectionAssert.AreEqual(new[] { a, a, b, b }, Enumerable.Range(0, 4).Select(ReadFrame));
+
+            var copiedStroke = memory.GetMemoryList.Single(s => s.Canvas == duplicate);
+            ulong beforeRepaint = PresentedRevision();
+            memory.PerformAndRecordCommand(new RepaintStrokeCommand(copiedStroke, Color.blue,
+                copiedStroke.m_BrushGuid, copiedStroke.m_BrushSize));
+            yield return null;
+            yield return ScrubToDrawing(2, duplicate);
+            Assert.Greater(PresentedRevision(), beforeRepaint);
+            Assert.AreEqual(Color.red, stroke.m_Color);
+            Assert.AreEqual(b, ReadFrame(2));
+
+            memory.StepBack();
+            yield return null;
+            yield return ScrubToDrawing(2, duplicate);
+            memory.StepBack();
+            yield return ScrubToDrawing(2, original);
+            CollectionAssert.AreEqual(new[] { a, a, a, a }, Enumerable.Range(0, 4).Select(ReadFrame));
         }
 
         [UnityTest]
