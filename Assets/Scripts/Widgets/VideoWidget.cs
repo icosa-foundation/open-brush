@@ -201,6 +201,7 @@ namespace TiltBrush
                 videoWidget.PinFromSave();
             }
             videoWidget.Group = App.GroupManager.GetGroupFromId(tiltVideo.GroupId);
+            tiltVideo.WidgetLink?.Attach(videoWidget);
             videoWidget.TwoSided = tiltVideo.TwoSided;
 
             TiltMeterScript.m_Instance.AdjustMeterWithWidget(videoWidget.GetTiltMeterCost(), up: true);

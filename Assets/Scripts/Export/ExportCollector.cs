@@ -1,4 +1,4 @@
-﻿// Copyright 2020 The Tilt Brush Authors
+// Copyright 2020 The Tilt Brush Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -474,10 +474,16 @@ namespace TiltBrush
             {
                 Model prefab = group.Key;
                 // Each element represents a GameObject in the "prefab"
-                List<PrefabGeometry[]> prefabObjs = GetPrefabGameObjs(payload, prefab).ToList();
+                List<PrefabGeometry[]> prefabObjs = group.Any(widget => widget.EditableVoxDocument == null)
+                    ? GetPrefabGameObjs(payload, prefab).ToList() : null;
 
                 foreach ((ModelWidget widget, int widgetIndex) in group.WithIndex())
                 {
+                    if (widget.EditableVoxDocument != null)
+                    {
+                        BuildEditableVoxModelMeshes(payload, widget, widgetIndex);
+                        continue;
+                    }
                     Matrix4x4 widgetXform = ExportUtils.ChangeBasis(widget.transform, payload);
                     // Acts like our AsScene[], AsCanvas[] accessors
                     var AsWidget = new TransformExtensions.RelativeAccessor(widget.transform);
@@ -526,6 +532,50 @@ namespace TiltBrush
             }
         }
 
+        private static void BuildEditableVoxModelMeshes(SceneStatePayload payload, ModelWidget widget, int widgetIndex)
+        {
+            // Export a finalized value. Neither the live grid nor its floating layer changes.
+            var document = widget.EditableVoxDocument.CreateFinalizedCopy();
+            int materialSeed = payload.idGenerator.GetIdFromInstanceId(widget.gameObject);
+            var collector = new ImportMaterialCollector(string.Empty, $"editable-vox-{materialSeed}");
+            var materialSet = new VoxMaterialSet(document, ModelCatalog.m_Instance.m_VoxLoaderStandardMaterial);
+            Material[] materials = materialSet.Materials.ToArray();
+            try
+            {
+                foreach (Material material in materials.Distinct()) collector.Add(material);
+                Matrix4x4 widgetXform = ExportUtils.ChangeBasis(widget.transform, payload);
+                foreach (var (model, index) in document.Models.WithIndex())
+                {
+                    if (!model.IsVisible || model.Voxels.Count == 0) continue;
+                    Mesh mesh = new VoxMeshBuilder().GenerateOptimizedMesh(model, document.Palette,
+                        materialSet.PaletteSubmeshIndices, materials.Length, materialSet.PaletteOccludesFaces);
+                    try
+                    {
+                        TrTransform pose = VoxMeshBuilder.GetModelTransform(model);
+                        foreach (PrefabGeometry geometry in GetPrefabGameObjMeshes(mesh, materials,
+                            payload, widget.Model, index, collector))
+                            payload.modelMeshes.Add(new ExportUtils.ModelMeshPayload(payload.groupIdMapping.GetId(widget.Group))
+                            {
+                                model = widget.Model,
+                                geometry = geometry.pool,
+                                exportableMaterial = geometry.exportableMaterial,
+                                geometryName = geometry.name,
+                                legacyUniqueName = $"{geometry.name}_i{materialSeed}",
+                                nodeName = $"{geometry.name}_{widgetIndex}",
+                                parentXform = widgetXform,
+                                localXform = ExportUtils.ChangeBasis(pose, payload),
+                                modelId = widgetIndex,
+                                xform = ExportUtils.ChangeBasis(App.Scene.AsScene[widget.transform] * pose, payload),
+                            });
+                    }
+                    finally { UnityEngine.Object.Destroy(mesh); }
+                }
+            }
+            finally
+            {
+                foreach (Material material in materialSet.OwnedMaterials) UnityEngine.Object.Destroy(material);
+            }
+        }
         // Helper for GetModelMeshPayloads() -- this is the level 3 iteration.
         // Enumerates all the GameObjects in a "prefab" and creates geometry for them.
         // Because Unity, the result is an array; but it'll almost certainly be length 1.
@@ -563,7 +613,7 @@ namespace TiltBrush
         //   meshIndex - the index of this Mesh within its owner "prefab"
         static IEnumerable<PrefabGeometry> GetPrefabGameObjMeshes(
             Mesh mesh, Material[] meshMaterials,
-            SceneStatePayload payload, Model prefab, int meshIndex)
+            SceneStatePayload payload, Model prefab, int meshIndex, ImportMaterialCollector collector = null)
         {
             if (meshMaterials.Length != mesh.subMeshCount)
             {
@@ -572,7 +622,7 @@ namespace TiltBrush
             string exportName = prefab.GetExportName();
 
             IExportableMaterial[] exportableMaterials = meshMaterials.Select(
-                mat => prefab.GetExportableMaterial(mat)).ToArray();
+                mat => collector != null ? collector.GetExportableMaterial(mat) : prefab.GetExportableMaterial(mat)).ToArray();
             VertexLayout?[] layouts = exportableMaterials.Select(iem => iem?.VertexLayout).ToArray();
             // TODO(b/142396408)
             // Is it better to write color/texcoord that we don't need, just to satisfy the layout?

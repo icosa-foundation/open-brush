@@ -170,6 +170,7 @@ namespace TiltBrush
             textWidget.Text = tiltText.Text;
             textWidget.Mode = tiltText.Mode;
             textWidget.Group = App.GroupManager.GetGroupFromId(tiltText.GroupId);
+            tiltText.WidgetLink?.Attach(textWidget);
 
             TiltMeterScript.m_Instance.AdjustMeterWithWidget(textWidget.GetTiltMeterCost(), up: true);
             textWidget.UpdateScale();

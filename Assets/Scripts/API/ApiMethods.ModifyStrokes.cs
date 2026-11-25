@@ -243,6 +243,20 @@ namespace TiltBrush
 
         public static Stroke JoinStrokes(Stroke stroke1, Stroke stroke2)
         {
+            switch (JoinStrokeCommand.ClassifySymmetryJoin(stroke2, stroke1))
+            {
+                case JoinStrokeCommand.SymmetryJoin.Refused:
+                    ControllerConsoleScript.m_Instance.AddNewLine(
+                        "These strokes cannot be joined: their linked mirrors or copy placements do not match");
+                    return stroke2;
+                case JoinStrokeCommand.SymmetryJoin.PeerGroups:
+                    // Every pair of copies joins, as the join tool does.
+                    SketchMemoryScript.m_Instance.PerformAndRecordCommand(
+                        new JoinStrokeCommand(stroke2, stroke1));
+                    return stroke2;
+            }
+            stroke1.LeaveSymmetryGroup();
+            stroke2.LeaveSymmetryGroup();
             MergeJoinedStrokeColors(new[] { stroke2, stroke1 }, stroke2);
             stroke2.m_ControlPoints = stroke2.m_ControlPoints.Concat(stroke1.m_ControlPoints).ToArray();
             stroke2.Uncreate();
@@ -261,6 +275,21 @@ namespace TiltBrush
         {
             var strokesToJoin = SketchMemoryScript.GetStrokesBetween(from, to);
             var firstStroke = strokesToJoin[0];
+            // As with joining two strokes: unlinked strokes, or copies of one linked group (whose
+            // result leaves the group). Mixing groups or mirrors would break their links.
+            var linkedGroups = strokesToJoin
+                .Select(stroke => stroke.SymmetryPeerGroup)
+                .Where(group => group?.Mirror != null)
+                .Distinct()
+                .ToList();
+            if (linkedGroups.Count > 1 || (linkedGroups.Count == 1 &&
+                strokesToJoin.Any(stroke => stroke.SymmetryPeerGroup != linkedGroups[0])))
+            {
+                ControllerConsoleScript.m_Instance.AddNewLine(
+                    "Strokes from different linked groups can't be joined as a range");
+                return firstStroke;
+            }
+            foreach (var stroke in strokesToJoin) { stroke.LeaveSymmetryGroup(); }
             MergeJoinedStrokeColors(strokesToJoin, firstStroke);
             firstStroke.m_ControlPoints = strokesToJoin.SelectMany(x => x.m_ControlPoints).ToArray();
             for (int i = 1; i < strokesToJoin.Count; i++)
@@ -278,6 +307,14 @@ namespace TiltBrush
         internal static void MergeJoinedStrokeColors(
             IReadOnlyList<Stroke> strokes, Stroke destination)
         {
+            var joined = GetJoinedStrokeColors(strokes, destination);
+            destination.m_OverrideColors = joined.Colors;
+            destination.m_ColorOverrideMode = joined.Mode;
+        }
+
+        internal static (List<Color32?> Colors, ColorOverrideMode Mode) GetJoinedStrokeColors(
+            IReadOnlyList<Stroke> strokes, Stroke destination)
+        {
             ColorOverrideMode mode = destination.m_ColorOverrideMode;
             Color baseColor = destination.m_Color;
             bool compatible = strokes.All(
@@ -287,22 +324,21 @@ namespace TiltBrush
             {
                 if (strokes.All(stroke => stroke.m_OverrideColors == null))
                 {
-                    destination.m_OverrideColors = null;
-                    return;
+                    return (null, mode);
                 }
 
-                destination.m_OverrideColors = strokes.SelectMany(stroke =>
+                var colors = strokes.SelectMany(stroke =>
                     Enumerable.Range(0, stroke.m_ControlPoints.Length).Select(index =>
                         stroke.m_OverrideColors != null && index < stroke.m_OverrideColors.Count
                             ? stroke.m_OverrideColors[index]
                             : null)).ToList();
-                return;
+                return (colors, mode);
             }
 
-            destination.m_OverrideColors = strokes.SelectMany(stroke =>
+            var replacements = strokes.SelectMany(stroke =>
                 Enumerable.Range(0, stroke.m_ControlPoints.Length).Select(
                     index => (Color32?)stroke.GetColor(index))).ToList();
-            destination.m_ColorOverrideMode = ColorOverrideMode.Replace;
+            return (replacements, ColorOverrideMode.Replace);
         }
 
         [ApiEndpoint(

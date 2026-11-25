@@ -82,7 +82,7 @@ namespace TiltBrush
                 widget.PinFromSave();
             }
             widget.Group = App.GroupManager.GetGroupFromId(tiltPortal.GroupId);
-
+            tiltPortal.WidgetLink?.Attach(widget);
             widget.UpdateScale();
         }
 

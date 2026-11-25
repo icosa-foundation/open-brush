@@ -290,7 +290,7 @@ namespace TiltBrush
                 soundClipWidget.PinFromSave();
             }
             soundClipWidget.Group = App.GroupManager.GetGroupFromId(tiltSoundClip.GroupId);
-
+            tiltSoundClip.WidgetLink?.Attach(soundClipWidget);
             TiltMeterScript.m_Instance.AdjustMeterWithWidget(soundClipWidget.GetTiltMeterCost(), up: true);
             soundClipWidget.UpdateScale();
         }

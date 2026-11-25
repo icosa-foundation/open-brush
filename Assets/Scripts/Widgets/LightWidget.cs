@@ -157,7 +157,7 @@ namespace TiltBrush
                 lightWidget.PinFromSave();
             }
             lightWidget.Group = App.GroupManager.GetGroupFromId(tiltLight.GroupId);
-
+            tiltLight.WidgetLink?.Attach(lightWidget);
             var gizmo = Instantiate(WidgetManager.m_Instance.SceneLightGizmoPrefab, lightWidget.transform);
             gizmo.SetupLightGizmos(light);
 

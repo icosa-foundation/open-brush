@@ -233,7 +233,7 @@ namespace TiltBrush
             widget.transform.localRotation = tilt.Transform.rotation;
             if (tilt.Pinned) { widget.PinFromSave(); }
             widget.Group = App.GroupManager.GetGroupFromId(tilt.GroupId);
-
+            tilt.WidgetLink?.Attach(widget);
             return widget;
         }
 
