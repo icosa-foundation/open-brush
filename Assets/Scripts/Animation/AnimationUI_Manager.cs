@@ -2418,7 +2418,7 @@ namespace TiltBrush.FrameAnimation
         private IEnumerable<Stroke> GetImmStrokes(CanvasScript canvas)
         {
             return m_CanvasStrokes.TryGetValue(canvas, out var strokes)
-                ? strokes.Where(s => s.IsGeometryEnabled).OrderBy(s =>
+                ? strokes.Where(ImmAnimationTrackSnapshot.IncludeSourceStroke).OrderBy(s =>
                     s.m_ControlPoints?.Length > 0 ? s.HeadTimestampMs : 0u)
                 : Enumerable.Empty<Stroke>();
         }

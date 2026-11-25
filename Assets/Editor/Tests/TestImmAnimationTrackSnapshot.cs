@@ -52,6 +52,26 @@ namespace TiltBrush.Tests
         }
 
         [Test]
+        public void EmptyBatchedQuillStrokesStayInvisibleDuringNativePlayback()
+        {
+            var stroke = MakeStroke(Quill.BRUSH_QUILL_RIBBON);
+            stroke.m_Type = Stroke.Type.BatchedBrushStroke;
+            stroke.m_BatchSubset = new BatchSubset { m_Active = true };
+            Assert.IsFalse(ImmAnimationTrackSnapshot.IncludeSourceStroke(stroke));
+            stroke.m_BatchSubset.m_VertLength = 4;
+            Assert.IsFalse(ImmAnimationTrackSnapshot.IncludeSourceStroke(stroke));
+            stroke.m_BatchSubset.m_nTriIndex = 6;
+            Assert.IsTrue(ImmAnimationTrackSnapshot.IncludeSourceStroke(stroke));
+            stroke.m_BatchSubset.m_Active = false;
+            Assert.IsFalse(ImmAnimationTrackSnapshot.IncludeSourceStroke(stroke));
+
+            stroke.m_BrushGuid = Guid.Empty;
+            stroke.m_BatchSubset = new BatchSubset { m_Active = true };
+            Assert.IsTrue(ImmAnimationTrackSnapshot.IncludeSourceStroke(stroke),
+                "An unsupported active stroke must still make the track fall back.");
+        }
+
+        [Test]
         public void RejectsUnsupportedBrushAndTiltedSections()
         {
             var stroke = MakeStroke(Quill.BRUSH_QUILL_RIBBON);

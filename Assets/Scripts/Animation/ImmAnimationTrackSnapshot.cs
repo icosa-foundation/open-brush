@@ -159,6 +159,21 @@ namespace TiltBrush.FrameAnimation
             return true;
         }
 
+        // An active batched stroke can contain no triangles (e.g. a too-short mark).
+        // Keep unsupported active strokes in the stream so they still trigger canvas fallback.
+        internal static bool IncludeSourceStroke(Stroke stroke)
+        {
+            if (!stroke.IsGeometryEnabled) return false;
+            if (!s_Sections.ContainsKey(stroke.m_BrushGuid)) return true;
+            if (stroke.m_Type == Stroke.Type.BatchedBrushStroke)
+            {
+                var subset = stroke.m_BatchSubset;
+                return subset.m_VertLength > 0 && subset.m_nTriIndex >= 3;
+            }
+            return stroke.m_Object.TryGetComponent<GeometryBrush>(out var geometry) &&
+                geometry.NumVerts > 0 && geometry.NumTris >= 3;
+        }
+
         internal static bool TryProjectStroke(Stroke stroke, out ImmLiveDrawingEdits.Stroke result, out float biggest)
         {
             result = default;
