@@ -28,6 +28,9 @@ namespace TiltBrush
         private bool m_ClearMode;
         private bool m_OwnsUndoGroup;
         private readonly Dictionary<Stroke, ModifyStrokePointColorsCommand> m_ActiveTintCommands = new();
+        // Per linked group in the current drag: the copy that drives it (the first touched) and
+        // the derivation that carries its colours to the other copies.
+        private readonly Dictionary<SymmetryStrokeGroup, RederiveSymmetryGroupCommand> m_ActiveDerives = new();
         public float EffectAmount { get; set; } = 1f;
 
         protected override bool IsOn()
@@ -46,6 +49,7 @@ namespace TiltBrush
             if (InputManager.m_Instance.GetCommandDown(InputManager.SketchCommands.Activate))
             {
                 m_ActiveTintCommands.Clear();
+                m_ActiveDerives.Clear();
                 if (ApiManager.Instance.ActiveUndo == null)
                 {
                     ApiManager.Instance.StartUndo();
@@ -59,6 +63,7 @@ namespace TiltBrush
             else if (!InputManager.m_Instance.GetCommand(InputManager.SketchCommands.Activate))
             {
                 m_ActiveTintCommands.Clear();
+                m_ActiveDerives.Clear();
             }
 
             if (InputManager.m_Instance.GetCommandDown(InputManager.SketchCommands.ToggleReshape))
@@ -171,12 +176,25 @@ namespace TiltBrush
 
             if (strokeIsModified)
             {
-                PlayModifyStrokeSound();
                 var undoParent = ApiManager.Instance.ActiveUndo;
+
+                // A linked group is tinted through one copy, the first the drag touches; the
+                // other copies are derived from it, so touching them directly does nothing.
+                var group = SymmetryPeerEditing.IsLinked(stroke) ? stroke.SymmetryPeerGroup : null;
+                if (group != null && undoParent != null &&
+                    m_ActiveDerives.TryGetValue(group, out var activeDerive) &&
+                    !ReferenceEquals(activeDerive.Source, stroke))
+                {
+                    return false;
+                }
+
+                PlayModifyStrokeSound();
+
                 ModifyStrokePointColorsCommand cmd;
                 if (undoParent == null)
                 {
                     cmd = new ModifyStrokePointColorsCommand(stroke, newOverrideColors, targetMode);
+                    if (group != null) { RederiveSymmetryGroupCommand.Appearance(stroke, cmd); }
                     SketchMemoryScript.m_Instance.PerformAndRecordCommand(cmd);
                 }
                 else
@@ -191,8 +209,15 @@ namespace TiltBrush
                     {
                         cmd.UpdateEndState(newOverrideColors, targetMode);
                     }
+                    if (group != null && !m_ActiveDerives.TryGetValue(group, out var derive))
+                    {
+                        // Before the tint is applied, so the instance data predates it.
+                        derive = RederiveSymmetryGroupCommand.Appearance(stroke, undoParent);
+                        m_ActiveDerives.Add(group, derive);
+                    }
                     // Apply changes immediately while keeping this command inside the active undo group.
                     cmd.Redo();
+                    if (group != null) { m_ActiveDerives[group].Refresh(); }
                 }
                 InputManager.m_Instance.TriggerHaptics(InputManager.ControllerName.Brush, m_HapticsToggleOn);
             }
@@ -223,6 +248,7 @@ namespace TiltBrush
                 m_OwnsUndoGroup = false;
             }
             m_ActiveTintCommands.Clear();
+            m_ActiveDerives.Clear();
         }
     }
 } // namespace TiltBrush

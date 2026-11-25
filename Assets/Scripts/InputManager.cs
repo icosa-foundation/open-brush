@@ -302,6 +302,7 @@ namespace TiltBrush
         //
 
         private bool m_AllowVrControllers = true;
+        private bool m_UIActivationConsumed;
         // This is indexed by enum ControllerName
         private ControllerInfo[] m_ControllerInfos;
 
@@ -521,6 +522,12 @@ namespace TiltBrush
                 m_ControllerInfos[i].Update();
             }
 
+            // Track release even when no panel has focus, so the next click is usable.
+            if (m_UIActivationConsumed && !GetCommand(SketchCommands.Activate))
+            {
+                m_UIActivationConsumed = false;
+            }
+
             // Update touch locators.
             // Controller pad touch locator should be active if thumb is on the pad.
             // For the brush controller, tools can override this, unless we're in the intro tutorial.
@@ -628,6 +635,13 @@ namespace TiltBrush
                 m_SketchToKeyboardCommandMap.Add((int)rCommand, value);
             }
             return value;
+        }
+
+        public bool UIActivationConsumed => m_UIActivationConsumed;
+
+        public void ConsumeUIActivationUntilRelease()
+        {
+            m_UIActivationConsumed = true;
         }
 
         public bool GetCommand(SketchCommands rCommand)

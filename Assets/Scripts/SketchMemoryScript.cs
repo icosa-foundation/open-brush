@@ -131,6 +131,9 @@ namespace TiltBrush
 
         // operation stack size as of last load (always 0) or save
         private int m_LastOperationStackCount;
+        private long m_UnrecordedChangesRevision;
+        private long m_LastSavedUnrecordedChangesRevision;
+        public long UnrecordedChangesRevision => m_UnrecordedChangesRevision;
         private bool m_HasVisibleObjects;
         private bool m_MemoryExceeded;
         private bool m_MemoryWarningAccepted;
@@ -140,6 +143,9 @@ namespace TiltBrush
         // Non-null if there are strokes that should be repainted this frame.
         // TODO: give this the same treatment as m_DeleteStrokes?
         private BaseCommand m_RepaintStrokeParent;
+        /// Linked groups already repainted in the batch m_RepaintStrokeParent is collecting. The
+        /// first copy a sweep reaches drives its group; the others are derived from it.
+        private HashSet<SymmetryStrokeGroup> m_RepaintGroupBatch = new HashSet<SymmetryStrokeGroup>();
 
         private TrTransform m_xfSketchInitial_RS;
 
@@ -285,9 +291,18 @@ namespace TiltBrush
             }
         }
 
-        public void SetLastOperationStackCount()
+        public void SetLastOperationStackCount(long? savedUnrecordedRevision = null)
         {
             m_LastOperationStackCount = m_OperationStack.Count;
+            m_LastSavedUnrecordedChangesRevision = Math.Max(
+                m_LastSavedUnrecordedChangesRevision,
+                savedUnrecordedRevision ?? m_UnrecordedChangesRevision);
+        }
+
+        // Scripted document mutations can be persistent without an undo command.
+        public void MarkUnrecordedChange()
+        {
+            ++m_UnrecordedChangesRevision;
         }
 
         public bool WillVertCountPutUsOverTheMemoryLimit(int numVerts)
@@ -329,6 +344,7 @@ namespace TiltBrush
         // True if strokes have been modified since last load or save (approximately)
         public bool IsMemoryDirty()
         {
+            if (m_UnrecordedChangesRevision != m_LastSavedUnrecordedChangesRevision) return true;
             if (m_OperationStack.Count != m_LastOperationStackCount)
             {
                 IEnumerable<BaseCommand> newCommands = null;
@@ -407,6 +423,7 @@ namespace TiltBrush
                 {
                     PerformAndRecordCommand(m_RepaintStrokeParent);
                     m_RepaintStrokeParent = null;
+                    m_RepaintGroupBatch.Clear();
                 }
                 OperationStackChanged?.Invoke();
             }
@@ -690,6 +707,17 @@ namespace TiltBrush
                     "Unexpected: enqueuing same stroke twice @ {0}",
                     Time.frameCount);
             }
+
+            // When peer editing is on, the strokes the symmetry drew alongside this one go too.
+            // Unlike the stroke itself, a peer may legitimately already be queued or erased - the
+            // eraser often sweeps through several strokes of the same group.
+            foreach (var peer in SymmetryPeerEditing.PeersOf(strokeObj))
+            {
+                if (peer.IsGeometryEnabled)
+                {
+                    m_DeleteStrokes.Add(peer);
+                }
+            }
         }
 
         public void MemorizeDeleteSelection(GameObject rObject)
@@ -725,9 +753,20 @@ namespace TiltBrush
                 newGuids.Add(newGuid);
                 newSizes.Add(newSize);
             }
-            PerformAndRecordCommand(
-                new RepaintStrokeCommand(strokes, newColors, newGuids, newSizes)
-            );
+
+            // A selected copy carries its linked group: the other copies are derived from it once
+            // it is repainted. Nothing runs before the command is recorded, so the group's
+            // instance data is still recorded from before the repaint.
+            var repaint = new RepaintStrokeCommand(strokes, newColors, newGuids, newSizes);
+            var groups = new HashSet<SymmetryStrokeGroup>();
+            foreach (var stroke in strokes)
+            {
+                if (SymmetryPeerEditing.IsLinked(stroke) && groups.Add(stroke.SymmetryPeerGroup))
+                {
+                    RederiveSymmetryGroupCommand.Appearance(stroke, repaint);
+                }
+            }
+            PerformAndRecordCommand(repaint);
         }
 
 
@@ -777,6 +816,13 @@ namespace TiltBrush
                 if (m_RepaintStrokeParent == null)
                 {
                     m_RepaintStrokeParent = new BaseCommand();
+                    m_RepaintGroupBatch.Clear();
+                }
+                var group = SymmetryPeerEditing.IsLinked(stroke) ? stroke.SymmetryPeerGroup : null;
+                if (group != null && !m_RepaintGroupBatch.Add(group))
+                {
+                    // Another copy of this group is being repainted; this one follows it.
+                    return true;
                 }
 
                 GetRepaintParams(
@@ -801,6 +847,21 @@ namespace TiltBrush
                 }
 
                 new RepaintStrokeCommand(stroke, newColor, newGuid, newSize, m_RepaintStrokeParent);
+
+                // The rest of the group is derived from the repainted copy, after it. Nothing in
+                // the batch runs until the end of the frame, so the group's instance data is
+                // still recorded from before the repaint.
+                if (group != null)
+                {
+                    if (positionJitter > 0)
+                    {
+                        new RederiveSymmetryGroupCommand(stroke, m_RepaintStrokeParent);
+                    }
+                    else
+                    {
+                        RederiveSymmetryGroupCommand.Appearance(stroke, m_RepaintStrokeParent);
+                    }
+                }
                 return true;
             }
             return false;
@@ -930,7 +991,11 @@ namespace TiltBrush
             m_NetworkStack.Clear();
             NetworkOperationStackChanged?.Invoke();
             m_LastOperationStackCount = 0;
+            ++m_UnrecordedChangesRevision;
+            m_LastSavedUnrecordedChangesRevision = m_UnrecordedChangesRevision;
             m_MemoryList.Clear();
+            SymmetryPeerPreview.Forget();
+            SymmetryMirrors.Clear();
             App.GroupManager.ResetGroups();
             SelectionManager.m_Instance.OnFinishReset();
             m_CurrentNodeByTime = null;

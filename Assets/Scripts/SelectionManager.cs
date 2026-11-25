@@ -67,6 +67,8 @@ namespace TiltBrush
 
         // The list of widgets currently selected.
         private HashSet<GrabWidget> m_SelectedWidgets;
+        private readonly Dictionary<GrabWidget, TrTransform> m_WidgetJoinTransforms =
+            new Dictionary<GrabWidget, TrTransform>();
         private HashSet<GrabWidget> m_SelectedWidgetsCopyWhileGrabbingGroup;
         private bool m_SdfGuideConversionInProgress;
         private bool m_ModelGuideConversionInProgress;
@@ -77,6 +79,7 @@ namespace TiltBrush
 
         private float m_snappingAngle;
         private float m_snappingGridSize;
+        private float m_ConfiguredSnappingGridSize = 0.1f;
         private float[] m_AngleSnaps;
         private float[] m_GridSnaps;
         private int m_CurrentSnapAngleIndex;
@@ -189,7 +192,7 @@ namespace TiltBrush
                 GrabWidget widget = m_SelectedWidgets.First();
                 if (widget is ModelWidget modelWidget)
                 {
-                    return modelWidget.HasMultipleNodes();
+                    return !SymmetryWidgetGroup.HasLinkedUsers(modelWidget.Model) && modelWidget.HasMultipleNodes();
                 }
 
                 if (widget is ImageWidget imageWidget)
@@ -220,7 +223,7 @@ namespace TiltBrush
                     {
                         return false;
                     }
-                    return modelWidget.MeshSplitPossible();
+                    return !SymmetryWidgetGroup.HasLinkedUsers(modelWidget.Model) && modelWidget.MeshSplitPossible();
                 }
 
                 if (widget is ImageWidget imageWidget)
@@ -398,8 +401,12 @@ namespace TiltBrush
         public int CurrentSnapGridIndex => m_CurrentSnapGridIndex;
         public float SnappingAngle => m_snappingAngle;
         public float SnappingGridSize => m_snappingGridSize;
+        // Keep the chosen spacing available when the snap-grid option is Off.
+        public float ConfiguredSnappingGridSize => m_ConfiguredSnappingGridSize;
 
         // Mainly stored for use in scripts
+        private Dictionary<Stroke, TrTransform> m_SelectionJoinTransforms;
+
         private Stroke m_LastSelectedStroke;
         private Stroke m_LastStroke;
 
@@ -624,6 +631,7 @@ namespace TiltBrush
         {
             m_Instance = this;
             m_SelectedStrokes = new HashSet<Stroke>();
+            m_SelectionJoinTransforms = new Dictionary<Stroke, TrTransform>(new ReferenceComparer<Stroke>());
             m_SelectedWidgets = new HashSet<GrabWidget>();
             m_AngleSnaps = new[] { 0f, 15f, 30f, 45f, 60f, 75f, 90f };
             m_GridSnaps = new[] { 0f, .1f, .25f, .5f, 1f, 2f, 3f, 5f };
@@ -637,6 +645,15 @@ namespace TiltBrush
         void Start()
         {
             m_SelectionWidget.SelectionTransformed += OnSelectionTransformed;
+        }
+
+        void OnDestroy()
+        {
+            if (m_Instance == this)
+            {
+                // Scene teardown destroys the peers' geometry; there is nothing left to restore.
+                SymmetryPeerPreview.Forget();
+            }
         }
 
         void Update()
@@ -760,6 +777,28 @@ namespace TiltBrush
 
         public void ResolveChanges()
         {
+            // Show the symmetry peers of the selection following it, but only once it has
+            // actually been moved: while the user is still picking strokes there is nothing to
+            // follow, and parking peers costs about what selecting them does.
+            TrTransform selectionXf = SelectionTransform;
+            bool wantPeerPreview = HasSelection &&
+                (selectionXf != TrTransform.identity || SymmetryPeerPreview.IsShowing ||
+                 (m_bSelectionWidgetNeedsUpdate &&
+                  m_SelectionJoinTransforms.Values.Any(xf => xf != TrTransform.identity)));
+            if (!wantPeerPreview)
+            {
+                SymmetryPeerPreview.Hide();
+            }
+            else if (!SymmetryPeerPreview.IsShowing || m_bSelectionWidgetNeedsUpdate)
+            {
+                // Rebuilt only when the selection itself changes; a drag doesn't change it.
+                SymmetryPeerPreview.Show(m_SelectedStrokes);
+            }
+            if (SymmetryPeerPreview.IsShowing)
+            {
+                SymmetryPeerPreview.UpdateTransform(selectionXf);
+            }
+
             if (m_bSelectionWidgetNeedsUpdate)
             {
                 m_SelectionWidget.SelectionTransform = SelectionTransformToScene(SelectionTransform);
@@ -813,13 +852,23 @@ namespace TiltBrush
             }
         }
 
-        public void ClearActiveSelection()
+        public void ClearActiveSelection(bool recordCommand = true)
         {
+            // The preview is left showing: the deselect keeps the copies it has moved into place.
+
             // Make sure we don't have a selection active.
             if (HasSelection)
             {
-                SketchMemoryScript.m_Instance.PerformAndRecordCommand(
-                    CreateEndSelectionCommand());
+                var command = CreateEndSelectionCommand();
+                if (recordCommand)
+                {
+                    SketchMemoryScript.m_Instance.PerformAndRecordCommand(command);
+                }
+                else
+                {
+                    // Snapshot capture restores the selection directly and must not edit history.
+                    command.Redo();
+                }
                 App.Scene.MainCanvas.gameObject.SetActive(true);
             }
         }
@@ -854,18 +903,100 @@ namespace TiltBrush
         /// This should only be called when we're clearing the scene and need to quickly
         /// forget our selection, knowing that the selection canvas will soon be cleared
         /// anyway.
+        /// The selection transform each selected stroke joined the selection under. A stroke
+        /// added to a selection that has already been moved has only moved by the difference
+        /// between this and the transform in force when it is deselected.
+        public TrTransform SelectionTransformWhenSelected(Stroke stroke)
+        {
+            return m_SelectionJoinTransforms.TryGetValue(stroke, out TrTransform xf)
+                ? xf
+                : TrTransform.identity;
+        }
+
+        public TrTransform SelectionTransformWhenSelected(GrabWidget widget) =>
+            m_WidgetJoinTransforms.TryGetValue(widget, out var xf) ? xf : TrTransform.identity;
+
+        internal void RestoreWidgetSelectionJoins(
+            IReadOnlyDictionary<GrabWidget, TrTransform> joins,
+            IReadOnlyDictionary<GrabWidget, CanvasScript> canvases)
+        {
+            foreach (var item in joins) { m_WidgetJoinTransforms[item.Key] = item.Value; }
+            foreach (var item in canvases) { item.Key.m_PreviousCanvas = item.Value; }
+        }
+
+        internal bool IsSymmetryGroupSelectedByOther(GrabWidget widget) =>
+            widget.SymmetryPeerGroup != null && widget.SymmetryPeerGroup.Members.Any(
+                peer => peer != widget && IsWidgetSelected(peer));
+
+        /// Undo of deselection must restore when each stroke joined, rather than treating
+        /// every stroke as newly selected at the final widget transform.
+        internal void RestoreSelectionJoinTransforms(
+            IReadOnlyDictionary<Stroke, TrTransform> joinTransforms)
+        {
+            foreach (var pair in joinTransforms)
+            {
+                if (IsStrokeSelected(pair.Key))
+                {
+                    m_SelectionJoinTransforms[pair.Key] = pair.Value;
+                }
+            }
+        }
+
+        internal void RestoreSelectionSourceCanvases(
+            IReadOnlyDictionary<Stroke, CanvasScript> sourceCanvases)
+        {
+            foreach (var pair in sourceCanvases)
+            {
+                if (IsStrokeSelected(pair.Key) && pair.Value != null &&
+                    !App.Scene.IsLayerDeleted(pair.Value))
+                {
+                    pair.Key.m_PreviousCanvas = pair.Value;
+                }
+            }
+        }
+
         public void ForgetStrokesInSelectionCanvas()
         {
+            SymmetryPeerPreview.Hide();
             m_SelectedStrokes.Clear();
+            m_SelectionJoinTransforms.Clear();
             m_SelectedWidgets.Clear();
+            m_WidgetJoinTransforms.Clear();
             SelectionTransform = TrTransform.identity;
             UpdateSelectionWidget();
         }
 
+        /// True if another copy of this stroke's linked group is selected. A linked group is
+        /// selected through one copy, which drives it; the others follow it as its mirror
+        /// images (see SymmetryPeerPreview), so they are never selected themselves.
+        public bool IsSymmetryGroupSelectedByOther(Stroke stroke)
+        {
+            var copy = SelectedSymmetryCopyOf(stroke);
+            return copy != null && !ReferenceEquals(copy, stroke);
+        }
+
+        /// The copy through which this stroke's linked group is selected, if it is; may be the
+        /// stroke itself. Null for an unlinked stroke or an unselected group.
+        public Stroke SelectedSymmetryCopyOf(Stroke stroke)
+        {
+            var group = stroke?.SymmetryPeerGroup;
+            if (group?.Mirror == null) { return null; }
+            foreach (var member in group.Strokes)
+            {
+                if (IsStrokeSelected(member)) { return member; }
+            }
+            return null;
+        }
+
         public void SelectStrokes(IEnumerable<Stroke> strokes, bool preserveTool = false)
         {
+            SymmetryPeerPreview.Hide();
+            Stroke lastSelected = null;
             foreach (var stroke in strokes)
             {
+                // Selecting a second copy of a linked group: the group is already selected.
+                if (IsSymmetryGroupSelectedByOther(stroke)) { continue; }
+                lastSelected = stroke;
                 if (IsStrokeSelected(stroke))
                 {
                     Debug.LogWarning("Attempted to select stroke that is already selected.");
@@ -875,6 +1006,7 @@ namespace TiltBrush
                 stroke.m_PreviousCanvas = stroke.Canvas;
                 stroke.SetParentKeepWorldPosition(App.Scene.SelectionCanvas, SelectionTransform.inverse);
                 m_SelectedStrokes.Add(stroke);
+                m_SelectionJoinTransforms[stroke] = SelectionTransform;
 
                 if (!m_GroupToSelectedStrokes.TryGetValue(stroke.Group, out var groupStrokes))
                 {
@@ -883,7 +1015,7 @@ namespace TiltBrush
                 Debug.Assert(!groupStrokes.Contains(stroke));
                 groupStrokes.Add(stroke);
             }
-            if (strokes.Any()) LastSelectedStroke = strokes.Last();
+            if (lastSelected != null) LastSelectedStroke = lastSelected;
 
             // If the manager is tasked to select strokes, make sure the SelectionTool is active.
             // b/64029485 In the event that the user does not have the SelectionTool active and presses
@@ -896,6 +1028,7 @@ namespace TiltBrush
 
         public void DeselectStrokes(IEnumerable<Stroke> strokes, CanvasScript targetCanvas = null)
         {
+            SymmetryPeerPreview.Hide();
             // Deselects to the canvas stored in m_PreviousCanvas for each stroke or widget
             // Pass in targetCanvas to override this.
 
@@ -903,12 +1036,18 @@ namespace TiltBrush
             {
                 if (!IsStrokeSelected(stroke))
                 {
-                    Debug.LogWarning("Attempted to deselect stroke that is not selected.");
+                    // Copies of a linked group are left out of the selection, so callers
+                    // undoing a selection of them may pass them back here.
+                    if (!SymmetryPeerEditing.IsLinked(stroke))
+                    {
+                        Debug.LogWarning("Attempted to deselect stroke that is not selected.");
+                    }
                     continue;
                 }
                 var destination = ChooseDestinationCanvas(targetCanvas, stroke.m_PreviousCanvas);
                 stroke.SetParentKeepWorldPosition(destination, SelectionTransform);
                 m_SelectedStrokes.Remove(stroke);
+                m_SelectionJoinTransforms.Remove(stroke);
 
                 var groupStrokes = m_GroupToSelectedStrokes[stroke.Group];
                 groupStrokes.Remove(stroke);
@@ -928,6 +1067,7 @@ namespace TiltBrush
 
         public void SelectWidgets(IEnumerable<GrabWidget> widgets)
         {
+            SymmetryPeerPreview.Hide();
             foreach (var widget in widgets)
             {
                 SelectWidget(widget);
@@ -941,6 +1081,7 @@ namespace TiltBrush
 
         public void SelectWidget(GrabWidget widget)
         {
+            if (IsSymmetryGroupSelectedByOther(widget)) { return; }
             RememberLastSelectedWidget(widget);
             if (IsWidgetSelected(widget))
             {
@@ -948,6 +1089,7 @@ namespace TiltBrush
                 return;
             }
             widget.m_PreviousCanvas = widget.Canvas;
+            m_WidgetJoinTransforms[widget] = SelectionTransform;
             widget.SetCanvas(App.Scene.SelectionCanvas);
             HierarchyUtils.RecursivelySetLayer(widget.transform,
                 App.Scene.SelectionCanvas.gameObject.layer);
@@ -993,6 +1135,7 @@ namespace TiltBrush
                 widget.RestoreGameObjectLayer(destination.gameObject.layer);
                 widget.gameObject.SetActive(true);
                 m_SelectedWidgets.Remove(widget);
+                m_WidgetJoinTransforms.Remove(widget);
 
                 var groupWidgets = m_GroupToSelectedWidgets[widget.Group];
                 groupWidgets.Remove(widget);
@@ -1034,6 +1177,7 @@ namespace TiltBrush
             foreach (var stroke in strokes)
             {
                 m_SelectedStrokes.Remove(stroke);
+                m_SelectionJoinTransforms.Remove(stroke);
                 RemoveFromGroupToSelectedStrokes(stroke.Group, stroke);
             }
             UpdateSelectionWidget();
@@ -1044,6 +1188,7 @@ namespace TiltBrush
             foreach (var widget in widgets)
             {
                 m_SelectedWidgets.Add(widget);
+                m_WidgetJoinTransforms[widget] = TrTransform.identity;
                 AddToGroupToSelectedWidgets(widget.Group, widget);
             }
             UpdateSelectionWidget();
@@ -1054,6 +1199,7 @@ namespace TiltBrush
             foreach (var widget in widgets)
             {
                 m_SelectedWidgets.Remove(widget);
+                m_WidgetJoinTransforms.Remove(widget);
                 RemoveFromGroupToSelectedWidgets(widget.Group, widget);
             }
             UpdateSelectionWidget();
@@ -1129,6 +1275,9 @@ namespace TiltBrush
 
             if (SelectionIsMeshSplittable)
             {
+                var voxelTool = SketchSurfacePanel.m_Instance.GetToolOfType(BaseTool.ToolType.VoxelTool) as VoxelTool;
+                voxelTool?.FinishEditing();
+                (m_SelectedWidgets.First() as ModelWidget)?.CommitVoxRegionSelection();
                 SketchMemoryScript.m_Instance.PerformAndRecordCommand(
                     new BreakModelApartCommand(m_SelectedWidgets.First() as ModelWidget));
             }
@@ -1139,8 +1288,12 @@ namespace TiltBrush
                 bool selectionIsInOneGroup = SelectionIsInOneGroup;
                 SketchGroupTag? targetGroup =
                     selectionIsInOneGroup ? SketchGroupTag.None : (SketchGroupTag?)null;
+                // A selected copy stands for its linked group, so the group's other copies are
+                // grouped with it.
+                var strokesToGroup = m_SelectedStrokes
+                    .Concat(SymmetryPeerEditing.PeersOutside(m_SelectedStrokes)).ToList();
                 SketchMemoryScript.m_Instance.PerformAndRecordCommand(
-                    new GroupStrokesAndWidgetsCommand(m_SelectedStrokes, m_SelectedWidgets, targetGroup: targetGroup));
+                    new GroupStrokesAndWidgetsCommand(strokesToGroup, m_SelectedWidgets, targetGroup: targetGroup));
 
                 OutputWindowScript.m_Instance.CreateInfoCardAtController(
                     InputManager.ControllerName.Brush, selectionIsInOneGroup ? "Ungrouped!" : "Grouped!");
@@ -1292,7 +1445,7 @@ namespace TiltBrush
             {
                 if (widget is not ModelWidget modelWidget ||
                     modelWidget.HasGPUIntersectionObject() ||
-                    !modelWidget.TryIntersectGsplat(center_GS, radius_GS, out float widgetScore))
+                    !modelWidget.TryIntersectNonGpuModel(center_GS, radius_GS, out float widgetScore))
                 {
                     continue;
                 }
@@ -1458,6 +1611,7 @@ namespace TiltBrush
             }
             if (m_snappingGridSize > 0)
             {
+                m_ConfiguredSnappingGridSize = m_snappingGridSize;
                 m_SnapGridVisualization.enabled = true;
                 m_SnapGridVisualization.gridInterval = m_snappingGridSize;
             }
@@ -1484,8 +1638,10 @@ namespace TiltBrush
         // Input is in global space, the snapping is done in canvas space
         // And the result is returned in global space
         public Vector3 SnapToGrid_GS(Vector3 position_GS)
+            => SnapToGrid_GS(position_GS, SnappingGridSize);
+
+        internal Vector3 SnapToGrid_GS(Vector3 position_GS, float gridSize)
         {
-            float gridSize = SnappingGridSize;
             if (gridSize == 0) return position_GS;
             Vector3 localCanvasPos = App.ActiveCanvas.transform.worldToLocalMatrix.MultiplyPoint3x4(position_GS);
             float round(float val) { return Mathf.Round(val / gridSize) * gridSize; }

@@ -775,6 +775,10 @@ namespace TiltBrush
             if (script.Globals.Get("_scriptHasBeenInitialized").Boolean)
             {
                 _CallScript(script, LuaNames.End);
+                if (Scripts[LuaApiCategory.SymmetryScript].Values.Contains(script))
+                {
+                    PointerManager.m_Instance.SymmetryWidget.ClearScriptedGuideBeams();
+                }
                 ApiMethods.ForcePaintingOn(false);
                 ApiMethods.ForcePaintingOff(false);
                 UnsetAllTimers(script);
@@ -1027,6 +1031,10 @@ namespace TiltBrush
         {
             if (!script.Globals.Get("_scriptHasBeenInitialized").Boolean)
             {
+                if (Scripts[LuaApiCategory.SymmetryScript].Values.Contains(script))
+                {
+                    PointerManager.m_Instance.SymmetryWidget.ClearScriptedGuideBeams();
+                }
                 var scriptName = script.Globals.Get(LuaNames.ScriptNameString).String;
                 var configs = GetWidgetConfigs(scriptName);
                 foreach (var config in configs)
@@ -1095,6 +1103,7 @@ namespace TiltBrush
             RegisterApiClass(script, "Video", typeof(VideoApiWrapper));
             RegisterApiClass(script, "VideoList", typeof(VideoListApiWrapper));
             RegisterApiClass(script, "Visualizer", typeof(VisualizerApiWrapper));
+            RegisterApiClass(script, "Vox", typeof(VoxApiWrapper));
             RegisterApiClass(script, "Wand", typeof(WandApiWrapper));
             RegisterApiClass(script, "Waveform", typeof(WaveformApiWrapper));
             RegisterApiClass(script, "WebRequest", typeof(WebRequestApiWrapper));
@@ -1106,6 +1115,8 @@ namespace TiltBrush
             UserData.RegisterType<Texture2D>();
 
             RegisterApiEnum(script, "SymmetryMode", typeof(SymmetryMode));
+            RegisterApiEnum(script, "SymmetryLineFamily", typeof(SymmetryLineFamily));
+            RegisterApiEnum(script, "SymmetryPenroseTiles", typeof(SymmetryPenroseTiles));
             RegisterApiEnum(script, "SymmetryPointType", typeof(SymmetryPointType));
             RegisterApiEnum(script, "SymmetryWallpaperType", typeof(SymmetryWallpaperType));
             RegisterApiEnum(script, "SymmetryPointerPaintMode", typeof(SymmetryPointerPaintMode));
@@ -1406,9 +1417,11 @@ namespace TiltBrush
 
         public ToolScriptExecutionResult DoToolScript(
             string fnName, TrTransform firstTr_CS, TrTransform secondTr_CS,
-            bool quickSnapPressed = false)
+            bool quickSnapPressed = false, bool isPreview = false)
         {
-            var pathWrapper = CallActiveToolScript(fnName);
+            PathListApiWrapper pathWrapper;
+            using (VoxScriptEditGroup.BeginExecution(isPreview))
+                pathWrapper = CallActiveToolScript(fnName);
             if (pathWrapper == null)
             {
                 SetLatestToolScriptControlPoints(null, ScriptCoordSpace.Canvas);

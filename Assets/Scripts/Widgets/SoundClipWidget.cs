@@ -289,6 +289,7 @@ namespace TiltBrush
             }
             soundClipWidget.Group = App.GroupManager.GetGroupFromId(tiltSoundClip.GroupId);
             soundClipWidget.SetCanvas(App.Scene.GetOrCreateLayer(tiltSoundClip.LayerId));
+            tiltSoundClip.WidgetLink?.Attach(soundClipWidget);
             TiltMeterScript.m_Instance.AdjustMeterWithWidget(soundClipWidget.GetTiltMeterCost(), up: true);
             soundClipWidget.UpdateScale();
         }

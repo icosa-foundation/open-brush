@@ -30,7 +30,7 @@ namespace TiltBrush
         public LayerApiWrapper layer
         {
             get => _ImageWidget != null ? new LayerApiWrapper(_ImageWidget.Canvas) : null;
-            set => _ImageWidget.SetCanvas(value._CanvasScript);
+            set => ApiMethods.MoveWidgetToLayer(_ImageWidget, value._CanvasScript);
         }
 
         [LuaDocsDescription("The group this image is part of")]
@@ -43,11 +43,10 @@ namespace TiltBrush
         [LuaDocsDescription("The transform of the image widget")]
         public TrTransform transform
         {
-            get => App.Scene.MainCanvas.AsCanvas[_ImageWidget.transform];
+            get => ApiMethods.GetWidgetTransform(_ImageWidget);
             set
             {
-                value = App.Scene.Pose * value;
-                App.Scene.ActiveCanvas.AsCanvas[_ImageWidget.transform] = value;
+                ApiMethods.SetWidgetTransform(_ImageWidget, value);
             }
         }
 
@@ -126,7 +125,8 @@ namespace TiltBrush
         [LuaDocsParameter("color", "The color of the extrusion")]
         public void Extrude(float depth, ColorApiWrapper color = null)
         {
-            _ImageWidget.SetExtrusion(depth, color._Color);
+            WidgetPropertyCommand.Set(_ImageWidget, "ImageExtrusion", (depth, color?._Color ?? UnityEngine.Color.white),
+                w => (w.ExtrusionDepth, w.ExtrusionColor), (w, v) => w.SetExtrusion(v.Item1, v.Item2));
         }
 
         [LuaDocsDescription("Encodes the image as a form")]

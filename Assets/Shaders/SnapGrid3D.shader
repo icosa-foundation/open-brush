@@ -72,6 +72,11 @@ Shader "Custom/Grid3D"
             float _CanvasScale;
             float4x4 _CanvasToWorldMatrix;
             float4x4 _WorldToCanvasMatrix;
+            float _UseGridOrigin;
+            float3 _GridOrigin;
+            float _PreviewMode;
+            float3 _BoundsMin;
+            float3 _BoundsMax;
 
             struct appdata {
                 uint id : SV_VERTEXID;
@@ -123,6 +128,51 @@ Shader "Custom/Grid3D"
 
             }
 
+            float3 calcBoxVertex(uint vertexId)
+            {
+                uint edge = vertexId / 12;
+                uint vertexInEdge = vertexId % 12;
+                uint plane = vertexInEdge / 6;
+                uint vertexInQuad = vertexInEdge % 6;
+                bool alongMax = vertexInQuad == 2 || vertexInQuad == 3 || vertexInQuad == 4;
+                bool sidePositive = vertexInQuad == 1 || vertexInQuad == 3 || vertexInQuad == 5;
+                float along = alongMax ? 1.0 : 0.0;
+                float side = sidePositive ? 1.0 : -1.0;
+                float width = _LineWidth * 0.5;
+
+                if (edge < 4)
+                {
+                    float y = edge % 2 == 0 ? _BoundsMin.y : _BoundsMax.y;
+                    float z = edge / 2 == 0 ? _BoundsMin.z : _BoundsMax.z;
+                    float3 perpendicular = plane == 0
+                        ? float3(0, width, 0)
+                        : float3(0, 0, width);
+                    return float3(lerp(_BoundsMin.x, _BoundsMax.x, along), y, z) +
+                        perpendicular * side;
+                }
+
+                if (edge < 8)
+                {
+                    uint localEdge = edge - 4;
+                    float x = localEdge % 2 == 0 ? _BoundsMin.x : _BoundsMax.x;
+                    float z = localEdge / 2 == 0 ? _BoundsMin.z : _BoundsMax.z;
+                    float3 perpendicular = plane == 0
+                        ? float3(width, 0, 0)
+                        : float3(0, 0, width);
+                    return float3(x, lerp(_BoundsMin.y, _BoundsMax.y, along), z) +
+                        perpendicular * side;
+                }
+
+                uint localEdge = edge - 8;
+                float x = localEdge % 2 == 0 ? _BoundsMin.x : _BoundsMax.x;
+                float y = localEdge / 2 == 0 ? _BoundsMin.y : _BoundsMax.y;
+                float3 perpendicular = plane == 0
+                    ? float3(width, 0, 0)
+                    : float3(0, width, 0);
+                return float3(x, y, lerp(_BoundsMin.z, _BoundsMax.z, along)) +
+                    perpendicular * side;
+            }
+
             v2f vert (appdata v)
             {
                 v2f o;
@@ -131,6 +181,15 @@ Shader "Custom/Grid3D"
                 UNITY_INITIALIZE_OUTPUT(v2f, o);
                 UNITY_TRANSFER_INSTANCE_ID(v, o);
                 UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
+
+                if (_PreviewMode > 0.5)
+                {
+                    float3 vertexPos = calcBoxVertex(v.id);
+                    float3 vertexPos_GS = mul(_CanvasToWorldMatrix, float4(vertexPos, 1));
+                    o.vertex = mul(UNITY_MATRIX_VP, float4(vertexPos_GS, 1));
+                    o.pos = half4(1, 1, 1, 1);
+                    return o;
+                }
 
                 uint vtx_per_quad = 6;
                 uint vtx_per_line = vtx_per_quad * 2;
@@ -155,7 +214,15 @@ Shader "Custom/Grid3D"
                 );
 
                 float3 gridOrigin_CS = _GridCount * -0.5;
-                float3 vertexPos_CS = (xyzIndex + gridOrigin_CS) * _GridInterval + quad;
+                float3 vertexPos_CS;
+                if (_UseGridOrigin > 0.5)
+                {
+                    vertexPos_CS = (_GridOrigin + xyzIndex - 0.5) * _GridInterval + quad;
+                }
+                else
+                {
+                    vertexPos_CS = (xyzIndex + gridOrigin_CS) * _GridInterval + quad;
+                }
 
                 float3 _Pointer_CS = mul(_WorldToCanvasMatrix, _Pointer_GS);
 
@@ -174,9 +241,15 @@ Shader "Custom/Grid3D"
                 float3 canvasOffsetFix_CS = quantizedCanvasOrigin_CS - _CanvasOrigin_CS;
                 float3 canvasOffsetFix_GS = mul(_CanvasToWorldMatrix, canvasOffsetFix_CS);
 
-                vertexPos_CS += quantizedPointer_CS;
+                if (_UseGridOrigin <= 0.5)
+                {
+                    vertexPos_CS += quantizedPointer_CS;
+                }
                 float3 vertexPos_GS = mul(_CanvasToWorldMatrix, vertexPos_CS);
-                vertexPos_GS -= canvasOffsetFix_GS;
+                if (_UseGridOrigin <= 0.5)
+                {
+                    vertexPos_GS -= canvasOffsetFix_GS;
+                }
                 o.vertex = mul(UNITY_MATRIX_VP, float4(vertexPos_GS, 1));
 
 
@@ -204,5 +277,3 @@ Shader "Custom/Grid3D"
         }
     }
 }
-
-

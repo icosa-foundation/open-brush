@@ -272,6 +272,13 @@ namespace TiltBrush
             OnActiveCanvasChanged(null, App.Scene.ActiveCanvas);
         }
 
+        void OnDisable()
+        {
+            // Preview strokes live under the canvas, so disabling a symmetry pointer
+            // does not hide them. Release them before the pointer stops updating.
+            DisablePreviewLine();
+        }
+
         void OnDestroy()
         {
             if (m_SubscribedCanvas != null)
