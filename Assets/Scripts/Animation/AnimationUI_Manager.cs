@@ -2350,15 +2350,41 @@ namespace TiltBrush.FrameAnimation
                 ? canvas : null;
         }
 
+        private void RefreshImmSnapshot(AnimationTimelineModel.Track track)
+        {
+            EnsureDrawingContentIndex();
+            if (m_ImmSource != track)
+            {
+                m_ImmSourceDrawingIds.Clear();
+                foreach (var span in track.Spans)
+                    m_ImmSourceDrawingIds.Add(span.Value.DrawingId);
+            }
+            m_ImmSource = track;
+            var previous = m_ImmSnapshot;
+            bool eligible = ImmAnimationTrackSnapshot.TryCreate(track,
+                    id => m_Drawings.TryGet(id, out var drawing) ? drawing : null,
+                    GetImmStrokes, HasImmWidgetContent, out m_ImmSnapshot, previous,
+                    m_VerifyImmGeometry ? MarkDrawingContentChanged : null, m_ImmRecolor);
+            m_ImmRecolor = default;
+            m_ImmDrawingDirty = false;
+            m_VerifyImmGeometry = false;
+            if (eligible) m_ImmPlayer?.SetTrack(m_ImmSnapshot.Drawings, m_ImmSnapshot.Frames);
+        }
+
         private void PrepareImmFrame()
         {
-            if (!GetChanging() || !m_UseImmPaintTrack || m_ImmPlayer == null || Timeline == null ||
-                m_ImmDrawingDirty || m_SparseTimelineDirty || GetVisibleImmTrack() != m_ImmSource) return;
+            bool preview = GetChanging();
+            bool changed = m_ImmDrawingDirty;
+            if ((!changed && !preview) || !m_UseImmPaintTrack || m_ImmPlayer == null || Timeline == null ||
+                m_SparseTimelineDirty || GetVisibleImmTrack() != m_ImmSource) return;
 
-            // Playback and scrubbing can both move the playhead between native ticks.
-            // Sample it once, immediately before the manager evaluates the pending seek.
+            // Stage edits and the host playhead before the native tick. LateUpdate still owns
+            // the canvas handoff and handles command notifications arriving after this point.
+            if (changed) RefreshImmSnapshot(m_ImmSource);
+            if (m_ImmSnapshot == null) return;
             int frame = FrameOn;
-            if (GetImmPreviewCanvas(frame) != null) m_ImmPlayer.PrepareFrame(frame);
+            if (preview && GetImmPreviewCanvas(frame) != null) m_ImmPlayer.PrepareFrame(frame);
+            else if (changed) m_ImmPlayer.Pump();
         }
 
         // LateUpdate coalesces notifications from one command (including Split, Undo and Redo)
@@ -2380,32 +2406,12 @@ namespace TiltBrush.FrameAnimation
             }
 
             if (m_ImmSource != null && m_ImmSource.Id != track.Id) DisposeImmTrack();
-            bool changed = m_ImmSource != track || m_ImmDrawingDirty;
-            if (changed)
+            if (m_ImmSource != track || m_ImmDrawingDirty) RefreshImmSnapshot(track);
+            if (m_ImmSnapshot == null)
             {
-                EnsureDrawingContentIndex();
-                if (m_ImmSource != track)
-                {
-                    m_ImmSourceDrawingIds.Clear();
-                    foreach (var span in track.Spans)
-                        m_ImmSourceDrawingIds.Add(span.Value.DrawingId);
-                }
-                m_ImmSource = track;
-                var previous = m_ImmSnapshot;
-                bool eligible = ImmAnimationTrackSnapshot.TryCreate(track,
-                        id => m_Drawings.TryGet(id, out var drawing) ? drawing : null,
-                        GetImmStrokes, HasImmWidgetContent, out m_ImmSnapshot, previous,
-                        m_VerifyImmGeometry ? MarkDrawingContentChanged : null, m_ImmRecolor);
-                m_ImmRecolor = default;
-                m_ImmDrawingDirty = false;
-                m_VerifyImmGeometry = false;
-                if (!eligible)
-                {
-                    ReleaseImmPlayer();
-                    return;
-                }
+                if (m_ImmPlayer != null) ReleaseImmPlayer();
+                return;
             }
-            if (m_ImmSnapshot == null) return;
             if (m_ImmPlayer == null)
             {
                 if (m_ImmInitializationFailed || App.VrSdk?.GetVrCamera() == null) return;
@@ -2416,7 +2422,7 @@ namespace TiltBrush.FrameAnimation
                     if (m_ImmInitializationFailed) return;
                     m_ImmPlayer = new ImmLivePaintTrack(m_ImmManager, m_Fps);
                     m_ImmManager.BeforeGlobalWork += PrepareImmFrame;
-                    changed = true;
+                    m_ImmPlayer.SetTrack(m_ImmSnapshot.Drawings, m_ImmSnapshot.Frames);
                 }
                 catch (Exception error)
                 {
@@ -2426,7 +2432,6 @@ namespace TiltBrush.FrameAnimation
                     return;
                 }
             }
-            if (changed) m_ImmPlayer.SetTrack(m_ImmSnapshot.Drawings, m_ImmSnapshot.Frames);
 
             int frame = FrameOn;
             var canvas = GetChanging() ? GetImmPreviewCanvas(frame) : null;
