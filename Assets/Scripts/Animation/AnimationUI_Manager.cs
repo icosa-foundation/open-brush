@@ -1754,7 +1754,11 @@ namespace TiltBrush.FrameAnimation
             (int, int) canvasIndex = GetCanvasLocation(canvas);
             if (canvasIndex.Item2 != -1)
             {
+                bool deletingActiveTrack = GetCanvasLocation(App.Scene.ActiveCanvas).Item1 == canvasIndex.Item1;
                 ApplySparseTimelineEdit(tracks => tracks[canvasIndex.Item1].Deleted = true);
+                if (deletingActiveTrack) App.Scene.ActiveCanvas = GetTimelineCanvas(0, FrameOn);
+                m_PreviousShowingFrame = -1;
+                FocusFrame(FrameOn);
             }
             ResetTimeline();
         }
@@ -1765,6 +1769,7 @@ namespace TiltBrush.FrameAnimation
             if (canvasIndex.Item2 != -1)
             {
                 ApplySparseTimelineEdit(tracks => tracks[canvasIndex.Item1].Deleted = false);
+                m_PreviousShowingFrame = -1;
                 FocusFrame(FrameOn);
             }
             ResetTimeline();
