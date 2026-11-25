@@ -5736,6 +5736,7 @@ namespace TiltBrush
                 case GlobalCommands.ExportRaw:
                     return SketchMemoryScript.m_Instance.HasVisibleObjects() ||
                         m_WidgetManager.ModelWidgets.Any(w => w.gameObject.activeSelf) ||
+                        m_WidgetManager.EditableModelWidgets.Any(w => w.gameObject.activeSelf) ||
                         m_WidgetManager.ImageWidgets.Any(w => w.gameObject.activeSelf);
                 case GlobalCommands.ResetAllPanels: return m_PanelManager.PanelsHaveBeenCustomized();
                 case GlobalCommands.Duplicate: return ClipboardManager.Instance.CanCopy;
