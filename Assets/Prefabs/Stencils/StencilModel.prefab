@@ -76,6 +76,14 @@ MonoBehaviour:
   m_SDFMeshAsset: {fileID: 0}
   m_SDFComputeShader: {fileID: 7200000, guid: bbe9cc249dec18f4aa68c4b8659b8dbb, type: 3}
   m_SDFPadding: 0.2
+  m_PreviewAlgorithmSettings:
+    m_maxAngleTolerance: 20
+    m_visualNormalSmoothing: 0.00001
+    m_isosurfaceExtractionType: 1
+    m_edgeIntersectionType: 0
+    m_binarySearchIterations: 5
+    m_applyGradientDescent: 1
+    m_gradientDescentIterations: 2
 --- !u!114 &120208921833142187
 MonoBehaviour:
   m_ObjectHideFlags: 0

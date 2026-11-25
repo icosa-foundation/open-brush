@@ -39,6 +39,7 @@ namespace TiltBrush
         [Header("Preview Mesh Settings")]
         [Tooltip("Resolution for preview mesh generation (higher = better quality)")]
         [SerializeField] private int m_PreviewResolution = 32;
+        [SerializeField] private AlgorithmSettings m_PreviewAlgorithmSettings = new AlgorithmSettings();
 
         // MeshCollider fallback thresholds (triangle count)
         // Only generate collider if mesh is below these thresholds
@@ -405,7 +406,7 @@ namespace TiltBrush
                 return;
             }
             outputModeField.SetValue(mainSettings, OutputMode.MeshFilter);
-            mainSettings.AutoUpdate = true;
+            mainSettings.AutoUpdate = false;
             m_TintableMeshes = new Renderer[] { m_MeshGenerator.MeshRenderer };
             m_HighlightMeshFilters = new[] {
                 m_MeshGenerator.MeshRenderer.GetComponent<MeshFilter>()
@@ -413,25 +414,10 @@ namespace TiltBrush
             HierarchyUtils.RecursivelySetMaterialBatchID(meshGeneratorObject.transform, m_BatchId);
             RefreshVisibility(WidgetManager.m_Instance.StencilsDisabled);
 
-            // AlgorithmSettings: Set isosurface extraction type
-            var algorithmSettings = m_MeshGenerator.AlgorithmSettings;
-            var extractionTypeField = typeof(AlgorithmSettings).GetField("m_isosurfaceExtractionType",
-                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            if (extractionTypeField == null)
-            {
-                Debug.LogError(
-                    $"{k_LogPrefix} The installed IsoMesh version does not expose its " +
-                    "extraction-method field.");
-                return;
-            }
-            extractionTypeField.SetValue(
-                algorithmSettings, IsosurfaceExtractionType.SurfaceNets);
-
-            // Notify the mesh generator about setting changes
             m_MeshGenerator.OnCellCountChanged();
             m_MeshGenerator.OnCellSizeChanged();
-            m_MeshGenerator.OnOutputModeChanged();
-            m_MeshGenerator.OnIsosurfaceExtractionTypeChanged();
+            m_MeshGenerator.SetAlgorithmSettings(m_PreviewAlgorithmSettings);
+            mainSettings.AutoUpdate = true;
 
             // Manually initialize the group and mesh (since we're doing this at runtime)
             m_SDFGroup.Register(m_SDFMeshComponent);
