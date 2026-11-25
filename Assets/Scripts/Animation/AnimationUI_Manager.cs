@@ -1159,6 +1159,7 @@ namespace TiltBrush.FrameAnimation
             mainTrack.Frames.AddSpan(1, originFrame);
             Timeline.Add(mainTrack);
             App.Scene.animationUI_manager = this;
+            m_FrameOn = 0;
             FocusFrame(0);
             timelineNotches = new List<GameObject>();
             timelineFrameObjects = new List<GameObject>();
