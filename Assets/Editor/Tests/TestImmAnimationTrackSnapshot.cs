@@ -72,6 +72,39 @@ namespace TiltBrush.Tests
         }
 
         [Test]
+        public void RecolorRebuildsWhenAStrokeWasMissingFromThePreviousProjection()
+        {
+            var go = new GameObject("Projection test canvas");
+            go.SetActive(false);
+            try
+            {
+                var canvas = go.AddComponent<CanvasScript>();
+                var id = new AnimationDrawingId(1);
+                var drawing = new FrameDrawing(id, canvas);
+                var track = new AnimationTimelineModel.Track(1, true, false, 1,
+                    new List<AnimationTimelineModel.Span>
+                    {
+                        new AnimationTimelineModel.Span(0, 1, new AnimationTimelineModel.FrameValue(id))
+                    });
+                var first = MakeStroke(Quill.BRUSH_QUILL_CYLINDER);
+                var added = MakeStroke(Quill.BRUSH_QUILL_CYLINDER);
+                first.m_IntendedCanvas = added.m_IntendedCanvas = canvas;
+                var visible = new List<Stroke> { first };
+                Assert.IsTrue(ImmAnimationTrackSnapshot.TryCreate(track, _ => drawing, _ => visible,
+                    _ => false, out var previous));
+                long before = drawing.ContentRevision;
+                drawing.MarkContentChanged();
+                visible.Add(added);
+                var hint = default(ImmAnimationTrackSnapshot.Recolor).Advance(added, id, before, drawing.ContentRevision);
+                Assert.IsTrue(ImmAnimationTrackSnapshot.TryCreate(track, _ => drawing, _ => visible,
+                    _ => false, out var current, previous, recolor: hint));
+                Assert.AreEqual(2, current.Drawings[0].Strokes.Length);
+                Assert.AreEqual(1, previous.Drawings[0].Strokes.Length);
+            }
+            finally { UnityEngine.Object.DestroyImmediate(go); }
+        }
+
+        [Test]
         public void RejectsUnsupportedBrushAndTiltedSections()
         {
             var stroke = MakeStroke(Quill.BRUSH_QUILL_RIBBON);

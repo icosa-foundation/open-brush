@@ -61,6 +61,7 @@ namespace TiltBrush.FrameAnimation
         readonly HashSet<AnimationDrawingId> m_ImmSourceDrawingIds = new();
         bool m_ImmDrawingDirty;
         bool m_VerifyImmGeometry;
+        ImmAnimationTrackSnapshot.Recolor m_ImmRecolor;
         bool m_ImmInitializationFailed;
         string m_ImmReportedError;
 
@@ -425,12 +426,10 @@ namespace TiltBrush.FrameAnimation
 
         private void OnSketchHistoryChanged(BaseCommand command)
         {
-            OnSketchCommandChanged(command);
-            if (m_ImmSource == null || command?.NeedsSave != true) return;
+            if (InvalidateSketchCommand(command) || m_ImmSource == null || command?.NeedsSave != true) return;
 
             // History can edit a drawing at another playhead. Split restores its own
             // timeline snapshot; a simple brush/delete command identifies its exact canvas.
-            if (command is SplitFrameCommand && command.ChildrenCount == 0) return;
             Stroke target = command switch
             {
                 BrushStrokeCommand brush => brush.m_Stroke,
@@ -450,7 +449,10 @@ namespace TiltBrush.FrameAnimation
             m_ImmDrawingDirty = true;
         }
 
-        private void OnSketchCommandChanged(BaseCommand command)
+        private void OnSketchCommandChanged(BaseCommand command) => InvalidateSketchCommand(command);
+
+        // Return true when the changed drawing is fully identified, including during Undo and Redo.
+        private bool InvalidateSketchCommand(BaseCommand command)
         {
             // Stroke and widget add/remove/canvas-transfer notifications maintain the ownership
             // index. Repaint, delete, grouping, duplication and their undo/redo paths can also
@@ -459,12 +461,26 @@ namespace TiltBrush.FrameAnimation
             InvalidateDrawingOccupancy();
             // Split changes the exposure table and owns the new drawing. On undo the
             // selected source drawing is untouched; selection transfers notify their canvases.
-            if (command is SplitFrameCommand && command.ChildrenCount == 0) return;
+            if (command is SplitFrameCommand && command.ChildrenCount == 0) return true;
+            // The repaint tool groups the strokes touched in one update under a plain command.
+            var leaf = m_ImmSource != null && command?.GetType() == typeof(BaseCommand) && command.ChildrenCount == 1
+                ? command.Children[0] : command;
+            if (m_ImmSource != null && leaf is RepaintStrokeCommand repaint && leaf.ChildrenCount == 0 &&
+                repaint.SingleRecoloredStroke is Stroke stroke &&
+                m_Drawings.TryGet(stroke.Canvas, out var owner))
+            {
+                long before = owner.ContentRevision;
+                MarkDrawingContentChanged(owner);
+                if (m_ImmSourceDrawingIds.Contains(owner.Id))
+                    m_ImmRecolor = m_ImmRecolor.Advance(stroke, owner.Id, before, owner.ContentRevision);
+                return true;
+            }
             if (command?.NeedsSave == true &&
                 m_Drawings.TryGet(m_AuthoringDrawingId, out FrameDrawing drawing))
             {
                 MarkDrawingContentChanged(drawing);
             }
+            return false;
         }
 
         private void InvalidateDrawingOccupancy()
@@ -2379,7 +2395,8 @@ namespace TiltBrush.FrameAnimation
                 bool eligible = ImmAnimationTrackSnapshot.TryCreate(track,
                         id => m_Drawings.TryGet(id, out var drawing) ? drawing : null,
                         GetImmStrokes, HasImmWidgetContent, out m_ImmSnapshot, previous,
-                        m_VerifyImmGeometry ? MarkDrawingContentChanged : null);
+                        m_VerifyImmGeometry ? MarkDrawingContentChanged : null, m_ImmRecolor);
+                m_ImmRecolor = default;
                 m_ImmDrawingDirty = false;
                 m_VerifyImmGeometry = false;
                 if (!eligible)
@@ -2488,6 +2505,7 @@ namespace TiltBrush.FrameAnimation
             ReleaseImmPlayer();
             m_ImmSource = null;
             m_ImmSnapshot = null;
+            m_ImmRecolor = default;
             m_ImmSourceDrawingIds.Clear();
             m_ImmDrawingDirty = false;
             m_VerifyImmGeometry = false;

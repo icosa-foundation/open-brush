@@ -32,6 +32,25 @@ namespace TiltBrush.FrameAnimation
                 { new Guid(Quill.BRUSH_QUILL_RIBBON), BrushSectionType.Segment }
             };
 
+        internal readonly struct Recolor
+        {
+            public readonly Stroke Stroke;
+            public readonly AnimationDrawingId DrawingId;
+            public readonly long Before, After;
+
+            private Recolor(Stroke stroke, AnimationDrawingId drawingId, long before, long after)
+            {
+                Stroke = stroke;
+                DrawingId = drawingId;
+                Before = before;
+                After = after;
+            }
+
+            internal Recolor Advance(Stroke stroke, AnimationDrawingId id, long before, long after) =>
+                new Recolor(stroke, id, Stroke == stroke && DrawingId == id && After == before ? Before : before, after);
+        }
+
+        private readonly Dictionary<long, Stroke[]> m_StrokeOrder;
         private readonly int m_TrackId;
         private readonly Dictionary<long, ImmLivePaintTrack.Drawing> m_ById;
 
@@ -39,10 +58,11 @@ namespace TiltBrush.FrameAnimation
         public ImmLivePaintTrack.Drawing[] Drawings { get; }
 
         private ImmAnimationTrackSnapshot(int trackId, long[] frames,
-            Dictionary<long, ImmLivePaintTrack.Drawing> byId)
+            Dictionary<long, ImmLivePaintTrack.Drawing> byId, Dictionary<long, Stroke[]> strokeOrder)
         {
             m_TrackId = trackId;
             m_ById = byId;
+            m_StrokeOrder = strokeOrder;
             Frames = frames;
             Drawings = new ImmLivePaintTrack.Drawing[byId.Count];
             byId.Values.CopyTo(Drawings, 0);
@@ -51,7 +71,8 @@ namespace TiltBrush.FrameAnimation
         public static bool TryCreate(AnimationTimelineModel.Track track,
             Func<AnimationDrawingId, FrameDrawing> resolve, Func<CanvasScript, IEnumerable<Stroke>> strokes,
             Func<CanvasScript, bool> hasWidgets, out ImmAnimationTrackSnapshot snapshot,
-            ImmAnimationTrackSnapshot previous = null, Action<FrameDrawing> verifyCachedGeometry = null)
+            ImmAnimationTrackSnapshot previous = null, Action<FrameDrawing> verifyCachedGeometry = null,
+            Recolor recolor = default)
         {
             snapshot = null;
             if (track == null || !track.Visible || track.Deleted || track.Length == 0 ||
@@ -60,6 +81,7 @@ namespace TiltBrush.FrameAnimation
             var frames = new long[track.Length];
             var byId = new Dictionary<long, ImmLivePaintTrack.Drawing>();
             var blankIds = new HashSet<long>();
+            var strokeOrder = new Dictionary<long, Stroke[]>();
             foreach (var span in track.Spans)
             {
                 var value = span.Value;
@@ -79,9 +101,17 @@ namespace TiltBrush.FrameAnimation
                     ImmLivePaintTrack.Drawing paint = default;
                     bool cached = previous != null && previous.m_TrackId == track.Id &&
                         previous.m_ById.TryGetValue(id, out paint) && paint.Revision == drawing.ContentRevision;
-                    if (!cached || verifyCachedGeometry != null)
+                    var order = paint == null ? null : previous.m_StrokeOrder[id];
+                    if (!cached && verifyCachedGeometry == null && paint != null &&
+                        recolor.DrawingId == drawing.Id && recolor.Before == paint.Revision &&
+                        recolor.After == drawing.ContentRevision &&
+                        TryRecolor(drawing, recolor.Stroke, order, paint, out var updated))
                     {
-                        if (!TryProjectDrawing(drawing, strokes(drawing.Canvas), out var current))
+                        paint = updated;
+                    }
+                    else if (!cached || verifyCachedGeometry != null)
+                    {
+                        if (!TryProjectDrawing(drawing, strokes(drawing.Canvas), out var current, out order))
                         {
                             if (cached) verifyCachedGeometry(drawing);
                             return false;
@@ -106,6 +136,7 @@ namespace TiltBrush.FrameAnimation
                         continue;
                     }
                     byId.Add(id, paint);
+                    strokeOrder.Add(id, order);
                 }
                 for (int i = span.StartFrame; i < span.EndFrameExclusive; ++i) frames[i] = id;
             }
@@ -115,7 +146,28 @@ namespace TiltBrush.FrameAnimation
             {
                 byId.Add(0, new ImmLivePaintTrack.Drawing(0, 0, Array.Empty<ImmLiveDrawingEdits.Stroke>(), 0));
             }
-            snapshot = new ImmAnimationTrackSnapshot(track.Id, frames, byId);
+            snapshot = new ImmAnimationTrackSnapshot(track.Id, frames, byId, strokeOrder);
+            return true;
+        }
+
+        // A color-only edit preserves the ordered stroke membership, widths and geometry limits.
+        // Recreate the target from its effective per-point colors and share all other immutable arrays.
+        private static bool TryRecolor(FrameDrawing drawing, Stroke stroke, Stroke[] order,
+            ImmLivePaintTrack.Drawing previous, out ImmLivePaintTrack.Drawing updated)
+        {
+            updated = null;
+            int index = Array.IndexOf(order, stroke);
+            if (index < 0 || stroke.Canvas != drawing.Canvas || !IncludeSourceStroke(stroke) ||
+                !TryProjectStroke(stroke, out var replacement, out _)) return false;
+            var old = previous.Strokes[index];
+            if (old.Brush != replacement.Brush || old.Points.Length != replacement.Points.Length) return false;
+            for (int i = 0; i < old.Points.Length; i++)
+                if (old.Points[i].Width != replacement.Points[i].Width) return false;
+
+            var strokes = (ImmLiveDrawingEdits.Stroke[])previous.Strokes.Clone();
+            strokes[index] = replacement;
+            updated = new ImmLivePaintTrack.Drawing(drawing.Id.Value, drawing.ContentRevision,
+                strokes, previous.BiggestStroke);
             return true;
         }
 
@@ -141,9 +193,11 @@ namespace TiltBrush.FrameAnimation
         }
 
         private static bool TryProjectDrawing(FrameDrawing drawing, IEnumerable<Stroke> source,
-            out ImmLivePaintTrack.Drawing result)
+            out ImmLivePaintTrack.Drawing result, out Stroke[] order)
         {
             result = default;
+            order = null;
+            var sources = new List<Stroke>();
             var strokes = new List<ImmLiveDrawingEdits.Stroke>();
             float biggest = 0;
             int pointCount = 0;
@@ -153,8 +207,10 @@ namespace TiltBrush.FrameAnimation
                 pointCount += paint.Points.Length;
                 if (strokes.Count >= 65536 || pointCount > 1048576) return false;
                 strokes.Add(paint);
+                sources.Add(stroke);
                 biggest = Mathf.Max(biggest, width);
             }
+            order = sources.ToArray();
             result = new ImmLivePaintTrack.Drawing(drawing.Id.Value, drawing.ContentRevision, strokes.ToArray(), biggest);
             return true;
         }

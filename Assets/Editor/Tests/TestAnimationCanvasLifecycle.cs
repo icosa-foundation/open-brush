@@ -207,15 +207,24 @@ namespace TiltBrush.Tests
 
             var copiedStroke = memory.GetMemoryList.Single(s => s.Canvas == duplicate);
             ulong beforeRepaint = PresentedRevision();
-            memory.PerformAndRecordCommand(new RepaintStrokeCommand(copiedStroke, Color.blue,
-                copiedStroke.m_BrushGuid, copiedStroke.m_BrushSize));
+            var repaint = new BaseCommand();
+            new RepaintStrokeCommand(copiedStroke, Color.blue, copiedStroke.m_BrushGuid, copiedStroke.m_BrushSize, repaint);
+            memory.PerformAndRecordCommand(repaint);
             yield return null;
             yield return ScrubToDrawing(2, duplicate);
             Assert.Greater(PresentedRevision(), beforeRepaint);
             Assert.AreEqual(Color.red, stroke.m_Color);
             Assert.AreEqual(b, ReadFrame(2));
 
+            // Undo while another drawing is selected. Only the repainted owner should advance.
+            yield return ScrubToDrawing(0, original);
+            Assert.IsTrue(manager.TryGetFrameDrawingForTests(original, out var selected));
+            Assert.IsTrue(manager.TryGetFrameDrawingForTests(duplicate, out var edited));
+            long selectedRevision = selected.ContentRevision, editedRevision = edited.ContentRevision;
             memory.StepBack();
+            Assert.AreEqual(selectedRevision, selected.ContentRevision);
+            Assert.Greater(edited.ContentRevision, editedRevision);
+            Assert.AreEqual(Color.red, copiedStroke.m_Color);
             yield return null;
             yield return ScrubToDrawing(2, duplicate);
             memory.StepBack();

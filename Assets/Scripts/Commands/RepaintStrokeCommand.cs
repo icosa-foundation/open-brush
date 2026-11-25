@@ -56,6 +56,10 @@ namespace TiltBrush
             m_EndSizes = newSizes.ToList();
         }
 
+        internal Stroke SingleRecoloredStroke => m_TargetStrokes.Count == 1 &&
+            m_StartGuids[0] == m_EndGuids[0] && m_StartSizes[0] == m_EndSizes[0]
+                ? m_TargetStrokes[0] : null;
+
         public override bool NeedsSave { get { return true; } }
 
         private void ApplyColorAndBrushToObject(Stroke stroke, Color color, Guid brushGuid, float brushSize)
