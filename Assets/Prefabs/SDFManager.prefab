@@ -184,11 +184,11 @@ MonoBehaviour:
   m_algorithmSettings:
     m_maxAngleTolerance: 20
     m_visualNormalSmoothing: 0.00001
-    m_isosurfaceExtractionType: 0
+    m_isosurfaceExtractionType: 1
     m_edgeIntersectionType: 1
     m_binarySearchIterations: 5
     m_applyGradientDescent: 1
-    m_gradientDescentIterations: 10
+    m_gradientDescentIterations: 2
   m_showGrid: 0
   m_settingsControlledByGrid: 0
 --- !u!1 &1620523607090452792
