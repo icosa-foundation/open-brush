@@ -596,7 +596,7 @@ namespace TiltBrush
                 PostProductionPreviewController.TargetPosition, PostProductionPreviewController.TargetRotation,
                 out float farClipMetres))
             {
-                Fail("the snapshot camera rig was not found");
+                Fail("the snapshot camera or its URP depth capture was unavailable");
                 return;
             }
             Graphics.Blit(s_CgColor, s_CgResolved); // resolves MSAA; sampled bilinearly

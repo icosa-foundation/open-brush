@@ -44,7 +44,7 @@ namespace TiltBrush
         private static bool s_MatchDisplay = true;
 
         public static RenderTexture ColorRT { get; private set; }
-        // Unity DepthNormals encoding: rg = view normal, ba = EncodeFloatRG(linear 0-1
+        // DepthNormals-compatible depth channels: ba = EncodeFloatRG(linear 0-1
         // depth, relative to the far plane). b == 1 && a == 0 means "nothing rendered".
         public static RenderTexture EncodedDepthRT { get; private set; }
         public static float FarClipMetres { get; private set; }
@@ -55,9 +55,7 @@ namespace TiltBrush
         public static volatile string LastDumpStatus = "no dump yet";
 
         private static Camera s_ColorCamera;
-        private static Camera s_DepthCamera;
-        private static Shader s_DepthNormalsShader;
-        private static readonly Color kNoDepthBackground = new Color(0.5f, 0.5f, 1.0f, 0.0f);
+        private static Material s_DepthMaterial;
 
         // Editor Play sessions keep static state (no domain reload). The previous session's
         // cameras were destroyed with its scene; its render textures are released here.
@@ -78,8 +76,8 @@ namespace TiltBrush
             LastStatus = "live CG off";
             LastDumpStatus = "no dump yet";
             s_ColorCamera = null;
-            s_DepthCamera = null;
-            s_DepthNormalsShader = null;
+            if (s_DepthMaterial != null) { Object.Destroy(s_DepthMaterial); }
+            s_DepthMaterial = null;
         }
 
         // width or height <= 0 returns to matching the display.
@@ -113,10 +111,14 @@ namespace TiltBrush
             }
             EnsureTargets();
 
-            var bloom = RenderTo(ColorRT, EncodedDepthRT, PostProductionLens.Active, template, targetCamera,
-                hasTargetPose, targetPosition, targetRotation, out var colorCam, out float farMetres);
+            HasFrame = RenderTo(ColorRT, EncodedDepthRT, PostProductionLens.Active, template, targetCamera,
+                hasTargetPose, targetPosition, targetRotation, out var colorCam, out float farMetres, out var bloom);
+            if (!HasFrame)
+            {
+                LastStatus = "live CG: URP depth capture unavailable";
+                return;
+            }
             FarClipMetres = farMetres;
-            HasFrame = true;
             string bloomState = !Bloom ? "off" : bloom != null ? "on" : "unavailable (no bloom on snapshot camera)";
             LastStatus = $"live CG {Width}x{Height} ({(s_MatchDisplay ? "matching display" : "fixed")}), bloom {bloomState}: " +
                 $"CPU-side render submit {timer.Elapsed.TotalMilliseconds:F1}ms | " +
@@ -136,28 +138,31 @@ namespace TiltBrush
             farClipMetres = 0f;
             Camera template = GetSnapshotCamera();
             if (template == null) { return false; }
-            RenderTo(color, encodedDepth, workingFrame, template, template, true, targetPosition, targetRotation,
-                out _, out farClipMetres);
-            return true;
+            return RenderTo(color, encodedDepth, workingFrame, template, template, true, targetPosition, targetRotation,
+                out _, out farClipMetres, out _);
         }
 
-        private static SENaturalBloomAndDirtyLens RenderTo(RenderTexture color, RenderTexture encodedDepth,
+        private static bool RenderTo(RenderTexture color, RenderTexture encodedDepth,
             bool workingFrame, Camera template, Camera targetCamera, bool hasTargetPose, Vector3 targetPosition,
-            Quaternion targetRotation, out Camera colorCam, out float farClipMetres)
+            Quaternion targetRotation, out Camera colorCam, out float farClipMetres, out SENaturalBloomAndDirtyLens bloom)
         {
-            // Two cameras so the colour camera can carry the bloom effect without it ever
-            // touching depth (toggling the effect per pass would rebuild its material every
-            // frame, since it creates it in OnEnable and destroys it in OnDisable).
             colorCam = GetCamera(ref s_ColorCamera, "PostProdLiveCgColorCamera");
-            Camera depthCam = GetCamera(ref s_DepthCamera, "PostProdLiveCgDepthCamera");
             SetupCamera(colorCam, template, targetCamera, hasTargetPose, targetPosition, targetRotation);
-            SetupCamera(depthCam, template, targetCamera, hasTargetPose, targetPosition, targetRotation);
-            farClipMetres = depthCam.farClipPlane * App.UNITS_TO_METERS;
+            farClipMetres = colorCam.farClipPlane * App.UNITS_TO_METERS;
+            bloom = SyncBloom(colorCam, template);
+            if (s_DepthMaterial == null)
+            {
+                var shader = Shader.Find("Hidden/CaptureNativeEyeDepth");
+                if (shader == null || !shader.isSupported) { return false; }
+                s_DepthMaterial = new Material(shader);
+                s_DepthMaterial.SetFloat("_EncodePostProductionDepth", 1);
+            }
+            s_DepthMaterial.SetVector("_CaptureClipPlanes", new Vector4(colorCam.nearClipPlane,
+                colorCam.farClipPlane, colorCam.orthographic ? 1 : 0, SystemInfo.usesReversedZBuffer ? 1 : 0));
 
             // Per-layer spatial offsets apply only while these two renders run.
             using var layerOffsets = new PostProductionLayerOffsetScope();
 
-            var bloom = SyncBloom(colorCam, template);
             colorCam.targetTexture = color;
             // MSAA only applies to forward rendering, and an HDR intermediate may not be
             // multisampled; 4x AA was measured as having no effect with the copied settings
@@ -167,19 +172,18 @@ namespace TiltBrush
             colorCam.allowHDR = false;
             colorCam.allowMSAA = true;
             ApplyProjection(colorCam, color.width, color.height, workingFrame);
-            colorCam.Render();
-            colorCam.targetTexture = null;
-
-            // Depth must not be multisampled: averaging encoded depth corrupts it.
-            depthCam.allowMSAA = false;
-            depthCam.targetTexture = encodedDepth;
-            depthCam.depthTextureMode = DepthTextureMode.Depth;
-            depthCam.clearFlags = CameraClearFlags.SolidColor;
-            depthCam.backgroundColor = kNoDepthBackground;
-            ApplyProjection(depthCam, encodedDepth.width, encodedDepth.height, workingFrame);
-            depthCam.RenderWithShader(GetDepthNormalsShader(), "RenderType");
-            depthCam.targetTexture = null;
-            return bloom;
+            try
+            {
+                UrpCaptureDepthRendererFeature.BeginCapture(colorCam, encodedDepth, s_DepthMaterial,
+                    UnityEngine.Rendering.Universal.RenderPassEvent.AfterRenderingTransparents);
+                colorCam.Render();
+                return UrpCaptureDepthRendererFeature.HasCapturedDepth(colorCam);
+            }
+            finally
+            {
+                UrpCaptureDepthRendererFeature.EndCapture(colorCam);
+                colorCam.targetTexture = null;
+            }
         }
 
         // Keeps a copy of the snapshot camera's bloom effect on the live camera, enabled
@@ -343,15 +347,6 @@ namespace TiltBrush
                 field.enabled = false;
             }
             return field;
-        }
-
-        private static Shader GetDepthNormalsShader()
-        {
-            if (s_DepthNormalsShader == null)
-            {
-                s_DepthNormalsShader = Shader.Find("Hidden/Internal-DepthNormalsTexture");
-            }
-            return s_DepthNormalsShader;
         }
 
         private static void EnsureTargets()
