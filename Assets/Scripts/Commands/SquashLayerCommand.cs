@@ -27,6 +27,7 @@ namespace TiltBrush
         private bool SquashedLayerWasActive;
         private AnimationUI_Manager.DeleteFrameOperation m_AnimationOperation;
         private bool m_UsesAnimation;
+        private BaseCommand m_DeselectCommand;
 
         public SquashLayerCommand(int squashedLayerIndex, int destinationLayerIndex, BaseCommand parent = null) : base(parent)
         {
@@ -44,6 +45,11 @@ namespace TiltBrush
 
         private void Init()
         {
+            if (App.Scene.animationUI_manager != null && App.Scene.animationUI_manager.GetTimelineLength() > 0 &&
+                SelectionManager.m_Instance.HasSelection)
+            {
+                m_DeselectCommand = SelectionManager.m_Instance.CreateEndSelectionCommand();
+            }
             m_OriginalStrokes = SketchMemoryScript.m_Instance.GetMemoryList
                 .Where(x => x.Canvas == m_SquashedLayer).ToArray();
             SquashedLayerWasActive = App.Scene.ActiveCanvas == m_SquashedLayer;
@@ -66,6 +72,7 @@ namespace TiltBrush
 
         protected override void OnDispose()
         {
+            m_DeselectCommand?.Dispose();
             if (m_UsesAnimation && m_AnimationOperation.Succeeded)
                 App.Scene.animationUI_manager.DiscardDeleteFrameOperationUndoState(m_AnimationOperation);
         }
@@ -79,7 +86,7 @@ namespace TiltBrush
             {
                 m_UsesAnimation = true;
                 m_AnimationOperation = App.Scene.animationUI_manager.SquashAnimationTrack(
-                    m_SquashedLayer, m_DestinationLayer);
+                    m_SquashedLayer, m_DestinationLayer, () => m_DeselectCommand?.Redo());
                 if (m_AnimationOperation.Succeeded) App.Scene.MarkLayerAsDeleted(m_SquashedLayer);
                 return;
             }
@@ -102,8 +109,10 @@ namespace TiltBrush
         {
             if (m_UsesAnimation)
             {
-                if (m_AnimationOperation.Succeeded) App.Scene.MarkLayerAsNotDeleted(m_SquashedLayer);
+                if (!m_AnimationOperation.Succeeded) return;
+                App.Scene.MarkLayerAsNotDeleted(m_SquashedLayer);
                 App.Scene.animationUI_manager.UndoDeleteFrameOperation(m_AnimationOperation);
+                m_DeselectCommand?.Undo();
                 m_AnimationOperation = default;
                 return;
             }

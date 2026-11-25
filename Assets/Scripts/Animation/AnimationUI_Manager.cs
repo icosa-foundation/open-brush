@@ -2603,7 +2603,8 @@ namespace TiltBrush.FrameAnimation
             return CompleteFrameLengthOperation(index, previousTimeline);
         }
 
-        public DeleteFrameOperation SquashAnimationTrack(CanvasScript source, CanvasScript destination)
+        public DeleteFrameOperation SquashAnimationTrack(CanvasScript source, CanvasScript destination,
+            Action beforeCopy = null)
         {
             EnsureSparseTimeline();
             int sourceTrack = GetCanvasLocation(source).Item1;
@@ -2617,6 +2618,7 @@ namespace TiltBrush.FrameAnimation
                 Debug.LogWarning("[OB_ANIM_REVIEW] Remove layer animation paths before squashing tracks.");
                 return default;
             }
+            beforeCopy?.Invoke();
             var previousTimeline = CreateTimelineSnapshot();
             var boundaries = m_SparseTimeline.Tracks[sourceTrack].Spans.Select(span => span.StartFrame)
                 .Concat(m_SparseTimeline.Tracks[destinationTrack].Spans.Select(span => span.StartFrame))
