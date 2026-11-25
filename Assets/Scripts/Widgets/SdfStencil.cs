@@ -25,7 +25,7 @@ namespace TiltBrush
         internal event Action ComponentsChanged;
 
         private const double k_VisualRefreshIntervalSeconds = 0.1;
-        private const double k_FinalVisualRefreshDelaySeconds = 0.2;
+        private const double k_VisualRetryIdleDelaySeconds = 0.2;
 #if UNITY_ANDROID
         private const int k_PreviewCellCount = 64;
 #else
@@ -39,8 +39,8 @@ namespace TiltBrush
         private int m_StartedVisualRevision;
         private int m_CompletedVisualRevision;
         private int m_GeneratedVisualRevision = -1;
-        private int m_FinalizedVisualRevision;
-        private bool m_StartedVisualGenerationIsFinal;
+        private int m_LastIdleAttemptRevision;
+        private bool m_StartedVisualGenerationWhileIdle;
         private double m_LastVisualMutationTime;
         private double m_LastVisualGenerationStartTime = double.NegativeInfinity;
 
@@ -429,7 +429,6 @@ namespace TiltBrush
             if (m_MeshGenerator == null || m_MeshGenerator.MeshRenderer == null ||
                 m_MeshGenerator.IsMeshGenerationPending ||
                 m_CompletedVisualRevision != m_RequestedVisualRevision ||
-                m_FinalizedVisualRevision != m_RequestedVisualRevision ||
                 m_GeneratedVisualRevision != m_RequestedVisualRevision)
             {
                 return false;
@@ -795,14 +794,14 @@ namespace TiltBrush
         {
             if (succeeded) { m_GeneratedVisualRevision = m_StartedVisualRevision; }
             // A revision is considered handled even if generation failed. This avoids an
-            // unsupported or failing readback producing a retry-and-log loop every frame; a later
-            // edit or show operation requests another attempt.
+            // unsupported or failing readback producing a retry-and-log loop every frame.
+            // A failed generation can retry once after edits settle.
             m_CompletedVisualRevision = Math.Max(
                 m_CompletedVisualRevision, m_StartedVisualRevision);
-            if (m_StartedVisualGenerationIsFinal)
+            if (m_StartedVisualGenerationWhileIdle)
             {
-                m_FinalizedVisualRevision = Math.Max(
-                    m_FinalizedVisualRevision, m_StartedVisualRevision);
+                m_LastIdleAttemptRevision = Math.Max(
+                    m_LastIdleAttemptRevision, m_StartedVisualRevision);
             }
 
             RefreshVisibility(WidgetManager.m_Instance.StencilsDisabled);
@@ -826,7 +825,7 @@ namespace TiltBrush
                     filter.sharedMesh.Clear();
                 }
                 m_CompletedVisualRevision = m_RequestedVisualRevision;
-                m_FinalizedVisualRevision = m_RequestedVisualRevision;
+                m_LastIdleAttemptRevision = m_RequestedVisualRevision;
                 return;
             }
 
@@ -839,12 +838,13 @@ namespace TiltBrush
             bool refreshIntervalElapsed =
                 now - m_LastVisualGenerationStartTime >= k_VisualRefreshIntervalSeconds;
             bool editingIsIdle =
-                now - m_LastVisualMutationTime >= k_FinalVisualRefreshDelaySeconds;
+                now - m_LastVisualMutationTime >= k_VisualRetryIdleDelaySeconds;
             bool needsUpdatedMesh =
                 m_CompletedVisualRevision < m_RequestedVisualRevision;
-            bool needsFinalMesh =
-                editingIsIdle && m_FinalizedVisualRevision < m_RequestedVisualRevision;
-            if (!needsUpdatedMesh && !needsFinalMesh)
+            bool shouldRetryFailedMesh = editingIsIdle &&
+                m_GeneratedVisualRevision != m_RequestedVisualRevision &&
+                m_LastIdleAttemptRevision < m_RequestedVisualRevision;
+            if (!needsUpdatedMesh && !shouldRetryFailedMesh)
             {
                 return;
             }
@@ -855,17 +855,17 @@ namespace TiltBrush
 
             int targetRevision = m_RequestedVisualRevision;
             int previousStartedRevision = m_StartedVisualRevision;
-            bool previousStartedWasFinal = m_StartedVisualGenerationIsFinal;
+            bool previousStartedWhileIdle = m_StartedVisualGenerationWhileIdle;
             int previousRequestCount = m_MeshGenerator.MeshGenerationRequestCount;
             FitPreviewGrid();
             m_StartedVisualRevision = targetRevision;
-            m_StartedVisualGenerationIsFinal = editingIsIdle;
+            m_StartedVisualGenerationWhileIdle = editingIsIdle;
             m_MeshGenerator.UpdateMesh();
 
             if (m_MeshGenerator.MeshGenerationRequestCount == previousRequestCount)
             {
                 m_StartedVisualRevision = previousStartedRevision;
-                m_StartedVisualGenerationIsFinal = previousStartedWasFinal;
+                m_StartedVisualGenerationWhileIdle = previousStartedWhileIdle;
                 return;
             }
 
