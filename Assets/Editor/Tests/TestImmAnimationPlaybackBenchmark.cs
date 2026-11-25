@@ -19,6 +19,7 @@ using UnityEngine.EventSystems;
 using UnityEngine.LowLevel;
 using UnityEngine.PlayerLoop;
 using UnityEngine.Rendering;
+using UnityEngine.Rendering.Universal;
 using UnityEngine.TestTools;
 using Debug = UnityEngine.Debug;
 
@@ -234,6 +235,162 @@ namespace TiltBrush.Tests
                 RenderTexture.ReleaseTemporary(target);
             }
         }
+
+        [UnityTest]
+        public IEnumerator FirstRenderAfterDrawingChange()
+        {
+            if (SystemInfo.graphicsDeviceType == GraphicsDeviceType.Null)
+                Assert.Ignore("Drawing presentation requires a graphics device.");
+
+            const int drawings = 4, size = 256, captureLayer = 30;
+            var manager = App.Scene.animationUI_manager;
+            manager.StartTimeline();
+            manager.ConfigureDrawingRenderProxiesForTests(enabled: false);
+            manager.ConfigureLegacyAnimationTracks(new List<IReadOnlyList<int>>
+            {
+                new[] { drawings * FramesPerDrawing }, Enumerable.Repeat(FramesPerDrawing, drawings).ToArray()
+            }, new List<bool> { true, true });
+
+            var cameraObject = new GameObject("IMM drawing transition camera");
+            var camera = cameraObject.AddComponent<Camera>();
+            var gameCamera = App.VrSdk.GetVrCamera();
+            camera.CopyFrom(gameCamera);
+            camera.transform.SetPositionAndRotation(gameCamera.transform.position, gameCamera.transform.rotation);
+            camera.enabled = false;
+            camera.stereoTargetEye = StereoTargetEyeMask.None;
+            camera.clearFlags = CameraClearFlags.SolidColor;
+            camera.backgroundColor = Color.black;
+            camera.orthographic = false;
+            camera.fieldOfView = 35;
+            camera.nearClipPlane = .1f;
+            camera.farClipPlane = 10f;
+            camera.allowMSAA = camera.allowHDR = false;
+            camera.GetUniversalAdditionalCameraData().renderPostProcessing = false;
+            camera.cullingMask = 1 << captureLayer;
+            var target = RenderTexture.GetTemporary(size, size, 24, RenderTextureFormat.ARGB32, RenderTextureReadWrite.sRGB);
+            camera.targetTexture = target;
+            var pixels = new Texture2D(64, 64, TextureFormat.RGBA32, false);
+            var canvases = new CanvasScript[drawings];
+            var layers = new Dictionary<MeshRenderer, int>();
+            NativeImmRenderer nativeCamera = null;
+            try
+            {
+                for (int i = 0; i < drawings; ++i)
+                {
+                    canvases[i] = manager.GetOrCreateContentCanvas(Track, i * FramesPerDrawing);
+                    AddStroke(canvases[i], camera, i * 2, 27);
+                    foreach (var renderer in canvases[i].GetComponentsInChildren<MeshRenderer>(true))
+                    {
+                        layers.Add(renderer, renderer.gameObject.layer);
+                        renderer.gameObject.layer = captureLayer;
+                    }
+                }
+                var options = new SerializedObject(manager);
+                options.FindProperty("m_ImmPaintTrackIndex").intValue = Track;
+                options.FindProperty("m_UseImmPaintTrack").boolValue = true;
+                options.ApplyModifiedPropertiesWithoutUndo();
+                manager.SelectTimelineFrame(Track, 0);
+                manager.TimelineSlideDown(true);
+                using (var probe = new CameraProbe(camera))
+                {
+                    yield return probe.Until(() =>
+                    {
+                        if (nativeCamera == null) nativeCamera = NativeImmRenderer.RetainForCapture(camera);
+                        return nativeCamera != null && !canvases[0].gameObject.activeSelf;
+                    });
+                    var driver = typeof(AnimationUI_Manager).GetField("m_ImmPlayer", PrivateInstance).GetValue(manager);
+                    var document = (ImmDocument)driver.GetType().GetField("_document", PrivateInstance).GetValue(driver);
+                    int layer = document.GetLayersManaged().Single(info => info.Type == ImmDocument.LayerType.Paint).Id;
+                    var failures = new List<string>();
+                    void CheckFirstRender(int frame, string mode)
+                    {
+                        int drawing = frame / FramesPerDrawing;
+                        var paint = document.GetEditableLayerStates().Single(state => state.id == layer);
+                        Assert.AreEqual(0, ImmLiveDrawingEdits.GetFrameDrawing(document.DocumentId, layer, frame, out var expected));
+                        Assert.AreEqual(0, ImmLiveDrawingEdits.GetDrawing(document.DocumentId, layer, paint.drawing, out var actual));
+                        bool onCanvas = canvases[drawing].gameObject.activeSelf;
+                        int image = ReadDrawingColor(target, pixels, drawings);
+                        if (!onCanvas && paint.visible != 0 && Mathf.Approximately(paint.opacity, 1f) &&
+                            actual == expected && image == drawing) return;
+
+                        Assert.IsTrue(document.TryGetSpawnAreaSnapshot(null, out var seek));
+                        failures.Add($"{mode} frame {frame}, canvas active {onCanvas}, visibility {paint.visible}, " +
+                            $"opacity {paint.opacity}, evaluated handle {actual}/{expected}, image {image}/{drawing}, " +
+                            $"seek {seek.requestedCommand}/{seek.completedCommand} {seek.commandStatus}");
+                    }
+
+                    // Sample each exposure on the first completed camera render, including the loop boundary.
+                    var changes = new HashSet<int>();
+                    int previous = -1;
+                    probe.AfterRender = _ =>
+                    {
+                        int frame = manager.AppliedFrameForStats;
+                        if (frame == previous) return;
+                        CheckFirstRender(frame, "play");
+                        if (previous >= 0 && frame == (previous + 1) % (drawings * FramesPerDrawing) &&
+                            previous / FramesPerDrawing != frame / FramesPerDrawing)
+                            changes.Add(frame);
+                        previous = frame;
+                    };
+                    manager.TimelineSlideDown(false);
+                    manager.StartAnimation();
+                    yield return probe.Until(() => changes.Count == drawings);
+                    manager.StopAnimation();
+                    manager.TimelineSlideDown(true);
+                    foreach (int frame in new[] { 5, 2, 2, 7, 0 })
+                    {
+                        bool sampled = false;
+                        probe.AfterRender = _ =>
+                        {
+                            if (sampled) return;
+                            Assert.AreEqual(frame, manager.AppliedFrameForStats);
+                            CheckFirstRender(frame, "scrub");
+                            sampled = true;
+                        };
+                        manager.SelectTimelineFrame(Track, frame);
+                        yield return probe.Until(() => sampled);
+                    }
+                    Assert.IsEmpty(failures, string.Join(Environment.NewLine, failures));
+                }
+            }
+            finally
+            {
+                manager.StopAnimation();
+                manager.TimelineSlideDown(false);
+                if (nativeCamera != null) nativeCamera.Release();
+                foreach (var pair in layers)
+                    if (pair.Key != null) pair.Key.gameObject.layer = pair.Value;
+                camera.targetTexture = null;
+                RenderTexture.ReleaseTemporary(target);
+                UnityEngine.Object.Destroy(pixels);
+                UnityEngine.Object.Destroy(cameraObject);
+            }
+        }
+
+        // The four isolated strokes have equally spaced hues and sit at the center of the camera.
+        // Read its existing target; rendering again here would miss a one-frame stale drawing.
+        private static int ReadDrawingColor(RenderTexture target, Texture2D pixels, int drawings)
+        {
+            var previous = RenderTexture.active;
+            try
+            {
+                RenderTexture.active = target;
+                pixels.ReadPixels(new Rect((target.width - pixels.width) / 2, (target.height - pixels.height) / 2,
+                    pixels.width, pixels.height), 0, 0, false);
+                Vector3 sum = Vector3.zero;
+                foreach (Color32 p in pixels.GetRawTextureData<Color32>())
+                {
+                    if (Math.Max(p.r, Math.Max(p.g, p.b)) - Math.Min(p.r, Math.Min(p.g, p.b)) > 30)
+                        sum += new Vector3(p.r, p.g, p.b);
+                }
+                if (sum == Vector3.zero) return -1;
+                sum.Normalize();
+                Color.RGBToHSV(new Color(sum.x, sum.y, sum.z), out float hue, out _, out _);
+                return Mathf.RoundToInt(hue * drawings) % drawings;
+            }
+            finally { RenderTexture.active = previous; }
+        }
+
 
         private static double? Percentile(List<double> values, double fraction)
         {
