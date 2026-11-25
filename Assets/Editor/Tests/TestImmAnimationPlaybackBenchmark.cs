@@ -15,6 +15,7 @@ using NUnit.Framework;
 using TiltBrush.FrameAnimation;
 using UnityEditor;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.LowLevel;
 using UnityEngine.PlayerLoop;
 using UnityEngine.Rendering;
@@ -71,8 +72,13 @@ namespace TiltBrush.Tests
 
             var target = RenderTexture.GetTemporary(Resolution, Resolution, 24);
             var previousTarget = camera.targetTexture;
+            // The test-runner scene can add a second EventSystem to the Main scene.
+            // Its per-update warning and stack trace otherwise dominate the measured thread.
+            var duplicates = UnityEngine.Object.FindObjectsByType<EventSystem>(FindObjectsSortMode.None)
+                .Where(system => system.isActiveAndEnabled && system != EventSystem.current).ToArray();
             try
             {
+                foreach (var duplicate in duplicates) duplicate.enabled = false;
                 camera.targetTexture = target;
                 using (var probe = new CameraProbe(camera))
                 {
@@ -118,6 +124,7 @@ namespace TiltBrush.Tests
                         if (imm) Assert.IsNotEmpty(verified, "Native paint never took over during playback.");
 
                         var wallMs = new List<double>(2048);
+                        var renderMs = new List<double>(2048);
                         var gpuMs = new List<double>(2048);
                         var frameTimings = new FrameTiming[1];
                         ulong lastGpuSample = 0;
@@ -131,6 +138,7 @@ namespace TiltBrush.Tests
                             if (previousFrame >= 0)
                             {
                                 wallMs.Add((stamp - previousStamp) * 1000);
+                                renderMs.Add(probe.LastRenderMs);
                                 bool taken = !canvases[frame / FramesPerDrawing].gameObject.activeSelf;
                                 if (taken) ++native;
                                 if (frame != previousFrame)
@@ -205,6 +213,8 @@ namespace TiltBrush.Tests
                             drawings = DrawingCount, strokesPerDrawing = StrokesPerDrawing, pointsPerStroke = PointsPerStroke,
                             framesPerDrawing = FramesPerDrawing, fps = 8, samples = wallMs.Count,
                             wallP50Ms = Percentile(wallMs, .5), wallP95Ms = Percentile(wallMs, .95),
+                            renderP50Ms = Percentile(renderMs, .5), renderP95Ms = Percentile(renderMs, .95),
+                            disabledDuplicateEventSystems = duplicates.Length,
                             gpuSamples = gpuMs.Count, gpuP50Ms = Percentile(gpuMs, .5), gpuP95Ms = Percentile(gpuMs, .95),
                             nativeFrames = native, canvasFrames = wallMs.Count - native,
                             holdTransitions = holds, holdTransitionsNative = nativeHolds,
@@ -216,6 +226,8 @@ namespace TiltBrush.Tests
             }
             finally
             {
+                foreach (var duplicate in duplicates)
+                    if (duplicate != null) duplicate.enabled = true;
                 manager.StopAnimation();
                 manager.TimelineSlideDown(false);
                 camera.targetTexture = previousTarget;
@@ -275,6 +287,7 @@ namespace TiltBrush.Tests
             private readonly Camera camera;
             private Exception failure;
             public Action<double> AfterRender;
+            public double LastRenderMs { get; private set; }
 
             internal CameraProbe(Camera camera)
             {
@@ -297,8 +310,11 @@ namespace TiltBrush.Tests
                 if (failure != null) return;
                 try
                 {
+                    double start = Now;
                     camera.Render();
-                    AfterRender?.Invoke(Now);
+                    double end = Now;
+                    LastRenderMs = (end - start) * 1000;
+                    AfterRender?.Invoke(end);
                 }
                 catch (Exception ex) { failure = ex; }
             }
