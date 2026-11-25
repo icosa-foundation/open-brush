@@ -455,6 +455,9 @@ namespace TiltBrush.FrameAnimation
             // change render data without changing ownership. They operate on the bound authoring
             // drawing, so invalidate that one drawing rather than scanning every animation frame.
             InvalidateDrawingOccupancy();
+            // Split changes the exposure table and owns the new drawing. On undo the
+            // selected source drawing is untouched; selection transfers notify their canvases.
+            if (command is SplitFrameCommand && command.ChildrenCount == 0) return;
             if (command?.NeedsSave == true &&
                 m_Drawings.TryGet(m_AuthoringDrawingId, out FrameDrawing drawing))
             {
