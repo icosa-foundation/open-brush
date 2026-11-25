@@ -13,6 +13,7 @@
 // limitations under the License.
 
 using System.Collections;
+using ImmPlayer.Authoring;
 using System.Collections.Generic;
 using UnityEngine;
 using System;
@@ -45,6 +46,21 @@ namespace TiltBrush.FrameAnimation
         bool m_AnimationMode = true;
         float m_SliderFrameSize = 0.12f; // Visual size of frame on timeline
         float m_TimelineOffset;
+
+        [Header("IMM Paint Playback")]
+        [SerializeField] bool m_UseImmPaintTrack;
+        [Tooltip("Zero-based track index to preview with IMM during playback or scrubbing.")]
+        [SerializeField, Min(0)] int m_ImmPaintTrackIndex;
+        AnimationTimelineModel.Track m_ImmSource;
+        ImmAnimationTrackSnapshot m_ImmSnapshot;
+        ImmLivePaintTrack m_ImmPlayer;
+        NativeImmRenderer m_ImmRenderer;
+        CanvasScript m_ImmSuppressedCanvas;
+        readonly HashSet<AnimationDrawingId> m_ImmSourceDrawingIds = new();
+        bool m_ImmDrawingDirty;
+        bool m_VerifyImmGeometry;
+        bool m_ImmInitializationFailed;
+        string m_ImmReportedError;
 
         [Header("Animation Performance Diagnostics")]
         [SerializeField] bool m_LogPerformanceStats;
@@ -392,17 +408,44 @@ namespace TiltBrush.FrameAnimation
             m_SubscribedMemory = SketchMemoryScript.m_Instance;
             if (m_SubscribedMemory == null) return;
             m_SubscribedMemory.CommandPerformed += OnSketchCommandChanged;
-            m_SubscribedMemory.CommandUndo += OnSketchCommandChanged;
-            m_SubscribedMemory.CommandRedo += OnSketchCommandChanged;
+            m_SubscribedMemory.CommandUndo += OnSketchHistoryChanged;
+            m_SubscribedMemory.CommandRedo += OnSketchHistoryChanged;
         }
 
         private void RemoveMemorySubscriptions()
         {
             if (m_SubscribedMemory == null) return;
             m_SubscribedMemory.CommandPerformed -= OnSketchCommandChanged;
-            m_SubscribedMemory.CommandUndo -= OnSketchCommandChanged;
-            m_SubscribedMemory.CommandRedo -= OnSketchCommandChanged;
+            m_SubscribedMemory.CommandUndo -= OnSketchHistoryChanged;
+            m_SubscribedMemory.CommandRedo -= OnSketchHistoryChanged;
             m_SubscribedMemory = null;
+        }
+
+        private void OnSketchHistoryChanged(BaseCommand command)
+        {
+            OnSketchCommandChanged(command);
+            if (m_ImmSource == null || command?.NeedsSave != true) return;
+
+            // History can edit a drawing at another playhead. Split restores its own
+            // timeline snapshot; a simple brush/delete command identifies its exact canvas.
+            if (command is SplitFrameCommand && command.ChildrenCount == 0) return;
+            Stroke target = command switch
+            {
+                BrushStrokeCommand brush => brush.m_Stroke,
+                DeleteStrokeCommand deletion => deletion.m_TargetStroke,
+                _ => null
+            };
+            if (target != null && command.ChildrenCount == 0)
+            {
+                if (m_Drawings.TryGet(target.Canvas, out var drawing) &&
+                    drawing.Id != m_AuthoringDrawingId && m_ImmSourceDrawingIds.Contains(drawing.Id))
+                    MarkDrawingContentChanged(drawing);
+                return;
+            }
+            // For compound edits and commands without public targets, compare geometry
+            // once. Only drawings whose source changed acquire a new native revision.
+            m_VerifyImmGeometry = true;
+            m_ImmDrawingDirty = true;
         }
 
         private void OnSketchCommandChanged(BaseCommand command)
@@ -446,6 +489,7 @@ namespace TiltBrush.FrameAnimation
         {
             drawing.MarkContentChanged();
             m_ProxyCompatibility.Remove(drawing.Id);
+            if (m_ImmSourceDrawingIds.Contains(drawing.Id)) m_ImmDrawingDirty = true;
         }
 
         public void NotifyCanvasWillBeDestroyed(CanvasScript canvas)
@@ -2131,7 +2175,8 @@ namespace TiltBrush.FrameAnimation
 
         private void SetCanvasActive(CanvasScript canvas, bool active)
         {
-            if (canvas == null || canvas.gameObject.activeSelf == active) return;
+            if (canvas == null || canvas.gameObject.activeSelf == active ||
+                (active && canvas == m_ImmSuppressedCanvas)) return;
             m_PerformanceStats?.RecordCanvasVisibilityRequest();
             canvas.gameObject.SetActive(active);
         }
@@ -2221,7 +2266,8 @@ namespace TiltBrush.FrameAnimation
                 bool eligible = ClassifyDrawingForProxy(
                     drawing, hasAnimatedPath: span.Value.PathToken != null).IsEligible;
                 m_ProxyVisibleEntries.Add((track.Id, drawing));
-                if (!eligible) m_ProxyIneligibleDrawings.Add(drawing.Id);
+                if (!eligible || (m_UseImmPaintTrack && trackIndex == m_ImmPaintTrackIndex))
+                    m_ProxyIneligibleDrawings.Add(drawing.Id);
             }
 
             foreach (var entry in m_ProxyVisibleEntries)
@@ -2267,8 +2313,159 @@ namespace TiltBrush.FrameAnimation
             m_AuthoringBaselineRevision = 0;
         }
 
+        // LateUpdate coalesces notifications from one command (including Split, Undo and Redo)
+        // and observes the playhead after Update has advanced it.
+        private void LateUpdate()
+        {
+            if (!m_UseImmPaintTrack || Timeline == null)
+            {
+                if (m_ImmSource != null) DisposeImmTrack();
+                return;
+            }
+
+            EnsureSparseTimeline();
+            var tracks = m_SparseTimeline.Tracks;
+            var track = m_ImmPaintTrackIndex >= 0 && m_ImmPaintTrackIndex < tracks.Count
+                ? tracks[m_ImmPaintTrackIndex] : null;
+            if (track == null || !track.Visible || track.Deleted)
+            {
+                if (m_ImmSource != null) DisposeImmTrack();
+                return;
+            }
+
+            if (m_ImmSource != null && m_ImmSource.Id != track.Id) DisposeImmTrack();
+            bool changed = m_ImmSource != track || m_ImmDrawingDirty;
+            if (changed)
+            {
+                EnsureDrawingContentIndex();
+                if (m_ImmSource != track)
+                {
+                    m_ImmSourceDrawingIds.Clear();
+                    foreach (var span in track.Spans)
+                        m_ImmSourceDrawingIds.Add(span.Value.DrawingId);
+                }
+                m_ImmSource = track;
+                var previous = m_ImmSnapshot;
+                bool eligible = ImmAnimationTrackSnapshot.TryCreate(track,
+                        id => m_Drawings.TryGet(id, out var drawing) ? drawing : null,
+                        GetImmStrokes, HasImmWidgetContent, out m_ImmSnapshot, previous,
+                        m_VerifyImmGeometry ? MarkDrawingContentChanged : null);
+                m_ImmDrawingDirty = false;
+                m_VerifyImmGeometry = false;
+                if (!eligible)
+                {
+                    ReleaseImmPlayer();
+                    return;
+                }
+            }
+            if (m_ImmSnapshot == null) return;
+            if (m_ImmPlayer == null)
+            {
+                if (m_ImmInitializationFailed || App.VrSdk?.GetVrCamera() == null) return;
+                try
+                {
+                    m_ImmInitializationFailed = !NativeImmRenderer.TryRetainForAnimation(
+                        out var manager, out m_ImmRenderer);
+                    if (m_ImmInitializationFailed) return;
+                    m_ImmPlayer = new ImmLivePaintTrack(manager, m_Fps);
+                    changed = true;
+                }
+                catch (Exception error)
+                {
+                    m_ImmInitializationFailed = true;
+                    ReleaseImmPlayer();
+                    Debug.LogWarning($"[OB_IMM_ANIMATION] Could not initialize track playback: {error.Message}");
+                    return;
+                }
+            }
+            if (changed) m_ImmPlayer.SetTrack(m_ImmSnapshot.Drawings, m_ImmSnapshot.Frames);
+
+            if ((m_Playing || m_Scrolling) && track.TryResolve(FrameOn, out var exposure))
+            {
+                CanvasScript canvas = GetCanvasForDrawing(exposure.Value.DrawingId);
+                if (canvas != null && (canvas.gameObject.activeSelf || canvas == m_ImmSuppressedCanvas))
+                {
+                    if (m_ImmPlayer.TryPresent(FrameOn, canvas.transform.localToWorldMatrix))
+                    {
+                        if (m_ImmSuppressedCanvas != canvas) RestoreImmCanvas();
+                        m_ImmSuppressedCanvas = canvas;
+                        SetCanvasActive(canvas, false);
+                    }
+                    else
+                    {
+                        RestoreImmCanvas();
+                        ReportImmPlaybackError();
+                    }
+                    return;
+                }
+            }
+            HideImmTrack();
+            m_ImmPlayer.Pump();
+            ReportImmPlaybackError();
+        }
+
+        private void ReportImmPlaybackError()
+        {
+            string error = m_ImmPlayer.Error;
+            if (error != null && error != m_ImmReportedError)
+                Debug.LogWarning($"[OB_IMM_ANIMATION] Using canvas playback. {error}");
+            m_ImmReportedError = error;
+        }
+
+        private IEnumerable<Stroke> GetImmStrokes(CanvasScript canvas)
+        {
+            return m_CanvasStrokes.TryGetValue(canvas, out var strokes)
+                ? strokes.Where(s => s.IsGeometryEnabled).OrderBy(s =>
+                    s.m_ControlPoints?.Length > 0 ? s.HeadTimestampMs : 0u)
+                : Enumerable.Empty<Stroke>();
+        }
+
+        private bool HasImmWidgetContent(CanvasScript canvas) =>
+            m_CanvasWidgets.TryGetValue(canvas, out var widgets) && widgets.Any(widget =>
+                widget != null && widget.transform.IsChildOf(canvas.transform));
+
+        private void RestoreImmCanvas()
+        {
+            if (m_ImmSuppressedCanvas == null) return;
+            // A structural edit may have hidden/deleted this exposure while IMM owned it.
+            // Only restore a canvas that is still visible at the current playhead.
+            var canvas = m_ImmSuppressedCanvas;
+            m_ImmSuppressedCanvas = null;
+            if (Timeline != null && GetTimelineLength() > 0 &&
+                GetVisibleCanvasesAtFrame(FrameOn).Contains(canvas))
+                SetCanvasActive(canvas, true);
+        }
+
+        private void HideImmTrack()
+        {
+            m_ImmPlayer?.Hide();
+            RestoreImmCanvas();
+        }
+
+        private void ReleaseImmPlayer()
+        {
+            HideImmTrack();
+            m_ImmPlayer?.Dispose();
+            m_ImmPlayer = null;
+            if (m_ImmRenderer != null) m_ImmRenderer.Release();
+            m_ImmRenderer = null;
+            m_ImmReportedError = null;
+        }
+
+        private void DisposeImmTrack()
+        {
+            ReleaseImmPlayer();
+            m_ImmSource = null;
+            m_ImmSnapshot = null;
+            m_ImmSourceDrawingIds.Clear();
+            m_ImmDrawingDirty = false;
+            m_VerifyImmGeometry = false;
+            m_ImmInitializationFailed = false;
+        }
+
         private void DisposePlaybackProxies()
         {
+            DisposeImmTrack();
             m_PlaybackProxies?.Dispose();
             m_PlaybackProxies = null;
             m_ProxyVisibilityApplied = false;
@@ -3200,6 +3397,7 @@ namespace TiltBrush.FrameAnimation
         public void TimelineSlideDown(bool down)
         {
             m_Scrolling = down;
+            if (!down && !m_Playing) HideImmTrack();
         }
 
         public void TimelineSlide(float Value)
@@ -3242,6 +3440,7 @@ namespace TiltBrush.FrameAnimation
         public void StopAnimation()
         {
             m_Playing = false;
+            HideImmTrack();
             RestoreCanvasPlaybackRendering();
             BindAuthoringCanvas(App.Scene?.ActiveCanvas);
             App.Scene.TriggerLayersUpdate();
