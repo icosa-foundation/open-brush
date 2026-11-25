@@ -323,6 +323,10 @@ namespace TiltBrush
             }
 
             TrTransform guidePose_GS = GuidePose(guide);
+            if (guide.Type == StencilType.Plane)
+            {
+                guide.FindClosestPointOnSurface(guide.transform.position, out guidePose_GS.translation, out _);
+            }
             TrTransform localTransform = sdfPose_GS.inverse * guidePose_GS;
 
             return new SdfStencil.PrimitiveDefinition(
