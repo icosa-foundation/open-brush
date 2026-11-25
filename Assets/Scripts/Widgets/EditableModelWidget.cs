@@ -237,16 +237,8 @@ namespace TiltBrush
             {
                 if ((axes & (1 << along)) != 0) { faceCount += 2; }
             }
-            const int coneSegments = 8;
-            const int verticesPerFace = 4 + 2 + coneSegments;
-            const int indicesPerFace = 6 + coneSegments * 6;
-            // Size in model space so the cones follow widget scaling. Keep thin shapes
-            // readable without letting large models produce oversized indicators.
-            float coneLength = Mathf.Clamp(Mathf.Max(bounds.size.x, bounds.size.y, bounds.size.z) * .12f,
-                .01f * App.METERS_TO_UNITS, .05f * App.METERS_TO_UNITS);
-            float coneRadius = coneLength * .4f;
-            var vertices = new Vector3[faceCount * verticesPerFace];
-            var triangles = new int[faceCount * indicesPerFace];
+            var vertices = new Vector3[faceCount * 4];
+            var triangles = new int[faceCount * 6];
             int quad = 0;
             for (int along = 0; along < 3; ++along)
             {
@@ -255,8 +247,7 @@ namespace TiltBrush
                 int up = (along + 2) % 3;
                 for (int face = 0; face < 2; ++face, ++quad)
                 {
-                    int start = quad * verticesPerFace;
-                    float sign = face == 0 ? -1 : 1;
+                    int start = quad * 4;
                     for (int corner = 0; corner < 4; ++corner)
                     {
                         Vector3 vertex = bounds.center;
@@ -265,41 +256,13 @@ namespace TiltBrush
                         vertex[up] += bounds.extents[up] * (corner < 2 ? -1 : 1);
                         vertices[start + corner] = vertex;
                     }
-                    int index = quad * indicesPerFace;
+                    int index = quad * 6;
                     triangles[index] = start;
                     triangles[index + 1] = start + (face == 0 ? 2 : 1);
                     triangles[index + 2] = start + (face == 0 ? 1 : 2);
                     triangles[index + 3] = start;
                     triangles[index + 4] = start + (face == 0 ? 3 : 2);
                     triangles[index + 5] = start + (face == 0 ? 2 : 3);
-
-                    // A capped cone starts at the face centre and points away from
-                    // the bounds centre, including on shapes with an offset origin.
-                    Vector3 faceCenter = bounds.center;
-                    faceCenter[along] += bounds.extents[along] * sign;
-                    int tip = start + 4;
-                    int capCenter = start + 5;
-                    int ring = start + 6;
-                    vertices[tip] = faceCenter;
-                    vertices[tip][along] += coneLength * sign;
-                    vertices[capCenter] = faceCenter;
-                    for (int segment = 0; segment < coneSegments; ++segment)
-                    {
-                        float angle = segment * (2f * Mathf.PI / coneSegments);
-                        Vector3 vertex = faceCenter;
-                        vertex[across] += Mathf.Cos(angle) * coneRadius;
-                        vertex[up] += Mathf.Sin(angle) * coneRadius;
-                        vertices[ring + segment] = vertex;
-                        int current = ring + segment;
-                        int next = ring + (segment + 1) % coneSegments;
-                        int side = index + 6 + segment * 6;
-                        triangles[side] = tip;
-                        triangles[side + 1] = face == 0 ? next : current;
-                        triangles[side + 2] = face == 0 ? current : next;
-                        triangles[side + 3] = capCenter;
-                        triangles[side + 4] = face == 0 ? current : next;
-                        triangles[side + 5] = face == 0 ? next : current;
-                    }
                 }
             }
             Mesh mesh = m_ScalePreview.sharedMesh;
