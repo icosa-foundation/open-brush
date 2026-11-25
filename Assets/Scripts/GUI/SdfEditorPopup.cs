@@ -37,9 +37,8 @@ namespace TiltBrush
         }
 
         private readonly List<OptionButton> m_Buttons = new List<OptionButton>();
-        private readonly List<SdfComponentHandle> m_ComponentHandles =
-            new List<SdfComponentHandle>();
-        private readonly List<int> m_ComponentHandleDimensions = new List<int>();
+        private readonly Dictionary<Guid, SdfComponentHandle[]> m_ComponentHandles =
+            new Dictionary<Guid, SdfComponentHandle[]>();
 
         private SdfStencil m_Stencil;
         private PopUpWindow m_Popup;
@@ -841,86 +840,64 @@ namespace TiltBrush
 
             IReadOnlyList<SdfStencil.ComponentDefinition> components =
                 m_Stencil.GetComponentDefinitions();
-            int[] dimensions = components.Select(component => component.IsPrimitive
-                    ? DimensionCountForPrimitive(component.Primitive.Value.Type)
-                    : 0).ToArray();
-            int expectedHandleCount = dimensions.Sum(count => 1 + count);
-            // Equal totals can still have different ordered roles (e.g. sphere/cuboid
-            // reordered). Rebuild so transform/dimension kind, index and axis agree.
-            if (m_ComponentHandles.Count != expectedHandleCount ||
-                !m_ComponentHandleDimensions.SequenceEqual(dimensions))
+            TrTransform guidePose = TrTransform.FromTransform(m_Stencil.transform);
+            for (int i = 0; i < components.Count; ++i)
             {
-                DestroyComponentHandles();
-                m_ComponentHandleDimensions.AddRange(dimensions);
-                Renderer sourceRenderer =
-                    m_Stencil.GetComponentsInChildren<Renderer>(true).FirstOrDefault();
-                Material sourceMaterial = sourceRenderer != null
-                    ? sourceRenderer.sharedMaterial
-                    : null;
-                TrTransform sdfPose_GS = TrTransform.FromTransform(m_Stencil.transform);
-                for (int i = 0; i < components.Count; ++i)
+                var component = components[i];
+                int dimensions = component.IsPrimitive
+                    ? DimensionCountForPrimitive(component.Primitive.Value.Type) : 0;
+                TrTransform pose = guidePose * component.Transform;
+                if (!m_ComponentHandles.TryGetValue(component.Identity, out var handles) ||
+                    handles.Length != dimensions + 1)
                 {
-                    TrTransform componentPose_GS = sdfPose_GS * components[i].Transform;
-                    m_ComponentHandles.Add(SdfComponentHandle.Create(
-                        this, i, componentPose_GS, sourceMaterial));
-                    if (!components[i].IsPrimitive)
+                    if (handles != null) { DisposeHandles(handles); }
+                    Material material = m_Stencil.GetComponentInChildren<Renderer>(true)?.sharedMaterial;
+                    handles = new SdfComponentHandle[dimensions + 1];
+                    handles[0] = SdfComponentHandle.Create(this, i, pose, material);
+                    for (int d = 0; d < dimensions; ++d)
                     {
-                        continue;
+                        handles[d + 1] = SdfComponentHandle.CreateDimension(
+                            this, i, d, DimensionAxis(d), pose, material);
                     }
-                    SdfStencil.PrimitiveDefinition primitive = components[i].Primitive.Value;
-                    int dimensionCount = DimensionCountForPrimitive(primitive.Type);
-                    for (int dimension = 0; dimension < dimensionCount; ++dimension)
-                    {
-                        Vector3 axis = DimensionAxis(dimension);
-                        TrTransform dimensionPose_GS = TrTransform.TRS(
-                            componentPose_GS * (axis * primitive.Geometry[dimension]),
-                            componentPose_GS.rotation, 1f);
-                        m_ComponentHandles.Add(SdfComponentHandle.CreateDimension(
-                            this, i, dimension, axis, dimensionPose_GS, sourceMaterial));
-                    }
+                    m_ComponentHandles[component.Identity] = handles;
+                }
+
+                for (int slot = 0; slot < handles.Length; ++slot)
+                {
+                    int dimension = slot - 1;
+                    var handle = handles[slot];
+                    handle.SetComponentIndex(i);
+                    handle.SetPose(slot == 0 ? pose : TrTransform.TRS(
+                        pose * (DimensionAxis(dimension) * component.Primitive.Value.Geometry[dimension]),
+                        pose.rotation, 1f));
+                    handle.SetSelected(i == m_ComponentIndex && (slot == 0 || dimension == m_DimensionIndex));
                 }
             }
 
-            TrTransform pose_GS = TrTransform.FromTransform(m_Stencil.transform);
-            int handleIndex = 0;
-            for (int i = 0; i < components.Count; ++i)
+            if (m_ComponentHandles.Count > components.Count)
             {
-                TrTransform componentPose_GS = pose_GS * components[i].Transform;
-                SdfComponentHandle handle = m_ComponentHandles[handleIndex++];
-                handle.SetComponentIndex(i);
-                handle.SetPose(componentPose_GS);
-                handle.SetSelected(i == m_ComponentIndex);
-                if (!components[i].IsPrimitive)
+                var removed = new HashSet<Guid>(m_ComponentHandles.Keys);
+                foreach (var component in components) { removed.Remove(component.Identity); }
+                foreach (Guid id in removed)
                 {
-                    continue;
+                    DisposeHandles(m_ComponentHandles[id]);
+                    m_ComponentHandles.Remove(id);
                 }
-                SdfStencil.PrimitiveDefinition primitive = components[i].Primitive.Value;
-                int dimensionCount = DimensionCountForPrimitive(primitive.Type);
-                for (int dimension = 0; dimension < dimensionCount; ++dimension)
-                {
-                    SdfComponentHandle dimensionHandle = m_ComponentHandles[handleIndex++];
-                    Vector3 axis = DimensionAxis(dimension);
-                    dimensionHandle.SetComponentIndex(i);
-                    dimensionHandle.SetPose(TrTransform.TRS(
-                        componentPose_GS * (axis * primitive.Geometry[dimension]),
-                        componentPose_GS.rotation, 1f));
-                    dimensionHandle.SetSelected(
-                        i == m_ComponentIndex && dimension == m_DimensionIndex);
-                }
+            }
+        }
+
+        private static void DisposeHandles(SdfComponentHandle[] handles)
+        {
+            foreach (var handle in handles)
+            {
+                if (handle != null) { handle.DisposeHandle(); }
             }
         }
 
         private void DestroyComponentHandles()
         {
-            foreach (SdfComponentHandle handle in m_ComponentHandles)
-            {
-                if (handle != null)
-                {
-                    handle.DisposeHandle();
-                }
-            }
+            foreach (var handles in m_ComponentHandles.Values) { DisposeHandles(handles); }
             m_ComponentHandles.Clear();
-            m_ComponentHandleDimensions.Clear();
         }
 
         private void ClampComponentSelection()
