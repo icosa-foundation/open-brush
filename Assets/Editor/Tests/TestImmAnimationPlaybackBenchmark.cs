@@ -337,20 +337,26 @@ namespace TiltBrush.Tests
                     yield return probe.Until(() => changes.Count == drawings);
                     manager.StopAnimation();
                     manager.TimelineSlideDown(true);
-                    foreach (int frame in new[] { 5, 2, 2, 7, 0 })
+                    foreach (var requests in new[]
                     {
+                        new[] { 5 }, new[] { 2 }, new[] { 2 }, new[] { 7 }, new[] { 0 }, new[] { 4, 2 }
+                    })
+                    {
+                        int expectedFrame = requests[requests.Length - 1];
                         bool sampled = false;
                         probe.AfterRender = _ =>
                         {
                             if (sampled) return;
-                            Assert.AreEqual(frame, manager.AppliedFrameForStats);
-                            CheckFirstRender(frame, "scrub");
+                            Assert.AreEqual(expectedFrame, manager.AppliedFrameForStats);
+                            CheckFirstRender(expectedFrame, $"scrub {string.Join(" -> ", requests)}");
                             sampled = true;
                         };
-                        manager.SelectTimelineFrame(Track, frame);
+                        // The final pair arrives before a single native update or camera render.
+                        foreach (int request in requests)
+                            manager.SelectTimelineFrame(Track, request);
                         yield return probe.Until(() => sampled);
                     }
-                    Assert.IsEmpty(failures, string.Join(Environment.NewLine, failures));
+                    Assert.IsEmpty(failures, string.Join(System.Environment.NewLine, failures));
                 }
             }
             finally
