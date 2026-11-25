@@ -128,7 +128,7 @@ namespace TiltBrush.MeshEditing
                     widget.transform.localPosition = transform.translation;
                     widget.transform.localRotation = transform.rotation;
                     widget.CustomDimension = At(instance.AxisScales, i, Vector3.one);
-                    widget.SetSignedWidgetSize(transform.scale);
+                    widget.RestoreSignedWidgetSize(transform.scale);
                     widget.Group = App.GroupManager.GetGroupFromId(At(instance.GroupIds, i, 0u));
                     if (At(instance.PinStates, i, false)) { widget.PinFromSave(); }
                     WidgetLink.Attach(widget, instance.WidgetLinks, i);
