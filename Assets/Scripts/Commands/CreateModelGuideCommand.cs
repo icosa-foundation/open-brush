@@ -63,7 +63,7 @@ namespace TiltBrush
             new ConfigureModelGuideCommand(
                 m_CreateCommand, source.Model, source.Subtree, source.Group, source.Pinned,
                 (targetCanvas.Pose.inverse * pose).scale, this);
-            new SelectModelGuideCommand(m_CreateCommand, source, targetCanvas, this);
+            new SelectModelGuideCommand(m_CreateCommand, source, targetCanvas, pose, this);
         }
 
         protected override void OnUndo()
@@ -118,14 +118,16 @@ namespace TiltBrush
             private readonly CreateWidgetCommand m_CreateCommand;
             private readonly ModelWidget m_Source;
             private readonly CanvasScript m_TargetCanvas;
+            private readonly TrTransform m_Pose_GS;
 
             internal SelectModelGuideCommand(
                 CreateWidgetCommand createCommand, ModelWidget source,
-                CanvasScript targetCanvas, BaseCommand parent) : base(parent)
+                CanvasScript targetCanvas, TrTransform pose_GS, BaseCommand parent) : base(parent)
             {
                 m_CreateCommand = createCommand;
                 m_Source = source;
                 m_TargetCanvas = targetCanvas;
+                m_Pose_GS = pose_GS;
             }
 
             protected override void OnRedo()
@@ -144,6 +146,8 @@ namespace TiltBrush
                 {
                     SelectionManager.m_Instance.SelectWidget(stencil);
                 }
+                // Selection reparents the guide, so store its intro pose in the new canvas frame.
+                stencil.InitIntroAnim(m_Pose_GS, m_Pose_GS, false, forceTransform: true);
                 SelectionManager.m_Instance.UpdateSelectionWidget();
                 App.Switchboard.TriggerSelectionChanged();
             }
