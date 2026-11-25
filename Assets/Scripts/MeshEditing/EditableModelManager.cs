@@ -71,6 +71,7 @@ namespace TiltBrush.MeshEditing
                 }
             }
             if (instances == null) { return; }
+            var bindings = new Dictionary<string, EditableModelDefinition>();
             foreach (var instance in instances)
             {
                 // Validate an entire parallel-array record before creating any of its widgets.
@@ -109,21 +110,25 @@ namespace TiltBrush.MeshEditing
                     OutputWindowScript.Error($"Editable model could not be displayed: {error.Message}");
                     continue;
                 }
+                if (!bindings.TryGetValue(instance.AssetId, out var definition))
+                {
+                    definition = new EditableModelDefinition(savedDefinition, instance.AssetId);
+                    bindings.Add(instance.AssetId, definition);
+                }
                 for (int i = 0; i < instance.RawTransforms.Length; ++i)
                 {
                     var canvas = App.Scene.GetOrCreateLayer(At(instance.LayerIds, i, 0));
                     var transform = instance.RawTransforms[i];
-                    var widget = GetOrCreate().GeneratePolyMesh(poly, recipe, canvas.Pose * transform,
-                        recordCommand: false, color: At(instance.Colors, i, Color.white), definitionId: instance.AssetId,
+                    var widget = GetOrCreate().GeneratePolyMesh(poly, definition, canvas.Pose * transform,
+                        recordCommand: false, color: At(instance.Colors, i, Color.white),
                         skipIntroAnimation: true);
-                    widget.m_Definition = savedDefinition;
                     var material = At(instance.Materials, i, null);
                     if (material != null) widget.SetMaterialSettings(material);
                     widget.SetCanvas(canvas);
                     widget.transform.localPosition = transform.translation;
                     widget.transform.localRotation = transform.rotation;
                     widget.CustomDimension = At(instance.AxisScales, i, Vector3.one);
-                    widget.SetSignedWidgetSize(transform.scale);
+                    widget.RestoreSignedWidgetSize(transform.scale);
                     widget.Group = App.GroupManager.GetGroupFromId(At(instance.GroupIds, i, 0u));
                     if (At(instance.PinStates, i, false)) { widget.PinFromSave(); }
                     WidgetLink.Attach(widget, instance.WidgetLinks, i);
@@ -137,9 +142,16 @@ namespace TiltBrush.MeshEditing
             Quaternion? desiredEndForward = null, bool forceTransform = true,
             float snapGrid = 0, float snapAngle = 0, bool recordCommand = true, Color? color = null, string definitionId = null,
             bool skipIntroAnimation = false)
+            => GeneratePolyMesh(poly, new EditableModelDefinition(new EditableModelDefinitionData(recipe), definitionId),
+                tr, desiredEndForward, forceTransform, snapGrid, snapAngle, recordCommand, color, skipIntroAnimation);
+
+        internal EditableModelWidget GeneratePolyMesh(PolyMesh poly, EditableModelDefinition definition, TrTransform tr,
+            Quaternion? desiredEndForward = null, bool forceTransform = true,
+            float snapGrid = 0, float snapAngle = 0, bool recordCommand = true, Color? color = null,
+            bool skipIntroAnimation = false)
         {
             // Validate the complete authoring recipe before creating scene objects.
-            recipe.GetSteps(out _, out _);
+            definition.Data.Recipe.GetSteps(out _, out _);
             Mesh mesh = BuildMesh(poly);
             var root = new GameObject("Editable geometry");
             var material = new Material((color ?? Color.white).a < 1
@@ -148,7 +160,7 @@ namespace TiltBrush.MeshEditing
             if (material.HasProperty("_BaseColor")) { material.SetColor("_BaseColor", color ?? Color.white); }
             if (material.HasProperty("_Color")) { material.SetColor("_Color", color ?? Color.white); }
             UpdateMesh(root, mesh, material);
-            var model = new Model(Model.Location.Generated(definitionId ?? Guid.NewGuid().ToString()));
+            var model = new Model(Model.Location.Generated(definition.Id));
             model.TakeGeneratedMaterialOwnership(material);
             model.LoadEditableModel(root);
             if (!model.m_Valid)
@@ -169,7 +181,7 @@ namespace TiltBrush.MeshEditing
             }
             widget.Model = model;
             model.ReleaseFromCatalog();
-            widget.m_PolyRecipe = recipe;
+            widget.Definition = definition;
             widget.m_PolyMesh = poly;
             widget.m_Color = color ?? Color.white;
             widget.Show(true);
@@ -177,7 +189,7 @@ namespace TiltBrush.MeshEditing
             return widget;
         }
 
-        internal void RegenerateMeshes(IEnumerable<EditableModelWidget> widgets, PolyMesh poly, GeometryRecipeData recipe)
+        internal void RegenerateMeshes(IEnumerable<EditableModelWidget> widgets, PolyMesh poly)
         {
             var targets = widgets.Where(widget => widget != null).ToArray();
             if (targets.Length == 0) { return; }
@@ -196,7 +208,6 @@ namespace TiltBrush.MeshEditing
                 widget.Model.SetGeneratedMesh(generatedMesh);
                 widget.RefreshGeneratedGeometry(mesh);
                 widget.m_PolyMesh = poly;
-                widget.m_PolyRecipe = recipe;
             }
         }
 

@@ -163,7 +163,7 @@ namespace TiltBrush
             try
             {
                 var recipe = ProceduralShapes.WithValue(m_Target.m_PolyRecipe, parameter, value);
-                SketchMemoryScript.m_Instance.PerformAndRecordCommand(new ModifyShapeCommand(m_Target, recipe, m_Gesture));
+                SketchMemoryScript.m_Instance.PerformAndRecordCommand(new ModifyShapeCommand(m_Target, recipe, ShapeEditScope.Instance, m_Gesture));
                 m_DisplayedRecipe = recipe;
                 m_StatusLabel.text = "";
             }

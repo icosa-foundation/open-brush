@@ -59,6 +59,12 @@ namespace TiltBrush
             }
         }
 
+        internal void RestoreImagePose(TrTransform localPose)
+        {
+            LocalTransform = localPose;
+            RestoreSignedWidgetSize(localPose.scale);
+        }
+
         public void SetAspectRatioOverride(float? aspect)
         {
             if (aspect.HasValue && (!(aspect.Value > 0) || float.IsInfinity(aspect.Value)))
