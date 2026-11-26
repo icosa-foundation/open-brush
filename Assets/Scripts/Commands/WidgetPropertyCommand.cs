@@ -10,10 +10,17 @@ namespace TiltBrush
         internal static void Set<TWidget, TValue>(TWidget driver, string property, TValue value,
             Func<TWidget, TValue> read, Action<TWidget, TValue> write) where TWidget : GrabWidget
         {
-            if (driver.SymmetryPeerGroup == null) { write(driver, value); return; }
+            if (driver.SymmetryPeerGroup == null)
+            {
+                TValue before = read(driver);
+                write(driver, value);
+                if (!EqualityComparer<TValue>.Default.Equals(before, read(driver)))
+                    SketchMemoryScript.m_Instance.MarkUnrecordedChange();
+                return;
+            }
             SymmetryPeerPreview.Hide();
-            SketchMemoryScript.m_Instance.PerformAndRecordCommand(
-                new Change<TWidget, TValue>(driver, property, value, read, write));
+            var command = new Change<TWidget, TValue>(driver, property, value, read, write);
+            if (command.HasChanges) SketchMemoryScript.m_Instance.PerformAndRecordCommand(command);
         }
 
         private sealed class Change<TWidget, TValue> : BaseCommand where TWidget : GrabWidget
@@ -35,6 +42,9 @@ namespace TiltBrush
                 m_Write = write;
                 m_After = value;
             }
+
+            internal bool HasChanges => m_Before.Any(before =>
+                !EqualityComparer<TValue>.Default.Equals(before, m_After));
 
             public override bool NeedsSave => true;
             protected override void OnRedo()

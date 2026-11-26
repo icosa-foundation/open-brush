@@ -41,6 +41,12 @@ namespace TiltBrush
             SetDescriptionText(m_Preset.Description);
         }
 
+        override public void UpdateButtonState(bool bActivateInputValid)
+        {
+            bool available = NativeImmImport.AllowsEnvironment(m_Preset);
+            if (available != IsAvailable()) SetButtonAvailable(available);
+        }
+
         override protected void OnButtonPressed()
         {
             if (SceneSettings.m_Instance.IsTransitioning &&

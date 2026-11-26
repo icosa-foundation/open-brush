@@ -108,6 +108,137 @@ namespace TiltBrush
             }
         }
 
+        [TestCase(false)]
+        [TestCase(true)]
+        public void CacheDownloadedAsset_KeepsImmAndOrdinaryRepresentationsSeparate(bool immFirst)
+        {
+            var catalog = CreateCatalog();
+            string assetId = $"unit-test-representations-{Guid.NewGuid():N}";
+            m_CachePathsToCleanup.Add(catalog.GetCacheDirectoryForAsset(assetId));
+            m_CachePathsToCleanup.Add(catalog.GetImmCacheDirectoryForAsset(assetId));
+            var cache = typeof(IcosaAssetCatalog).GetMethod("CacheDownloadedAsset",
+                BindingFlags.Instance | BindingFlags.NonPublic);
+
+            Model Cache(VrAssetFormat format, string filename)
+            {
+                var asset = new IcosaRawAsset(assetId, new[] { format });
+                typeof(IcosaRawAsset).GetProperty("SelectedFormat").SetValue(asset, format);
+                asset.SetRootElement(filename, "https://example.invalid/model");
+                asset.CopyBytesToRootElement(new byte[] { 1 });
+                return (Model)cache.Invoke(catalog, new object[] { asset });
+            }
+
+            Model imm = immFirst ? Cache(VrAssetFormat.IMM, "model.imm") : null;
+            if (immFirst) Assert.IsNull(catalog.GetModel(assetId));
+            Model gltf = Cache(VrAssetFormat.GLTF2, "model.gltf2");
+            Assert.AreSame(gltf, catalog.GetModel(assetId));
+            Model vox = Cache(VrAssetFormat.VOX, "model.vox");
+            if (!immFirst) imm = Cache(VrAssetFormat.IMM, "model.imm");
+
+            Assert.AreSame(gltf, catalog.GetModel(assetId));
+            Assert.AreSame(gltf, catalog.GetModel(assetId, VrAssetFormat.GLTF2));
+            Assert.AreSame(vox, catalog.GetModel(assetId, VrAssetFormat.VOX));
+            Assert.AreSame(imm, catalog.GetModel(assetId, VrAssetFormat.IMM));
+            Assert.AreSame(gltf, Cache(VrAssetFormat.GLTF2, "model.gltf2"),
+                "A duplicate download must retain the instance used by existing widgets");
+        }
+
+        [Test]
+        public void RequestModelLoad_CancellationOnlyAffectsRequestedFormat()
+        {
+            var catalog = CreateCatalog();
+            string assetId = $"unit-test-load-formats-{Guid.NewGuid():N}";
+            catalog.RequestModelLoad(assetId, "test", VrAssetFormat.GLTF2);
+            catalog.RequestModelLoad(assetId, "test", VrAssetFormat.VOX);
+            catalog.RequestModelLoad(assetId, "test", VrAssetFormat.IMM);
+
+            Assert.IsTrue(catalog.IsLoading(assetId, VrAssetFormat.GLTF2));
+            Assert.IsTrue(catalog.IsLoading(assetId, VrAssetFormat.VOX));
+            Assert.IsTrue(catalog.IsLoading(assetId, VrAssetFormat.IMM));
+            Assert.IsTrue(catalog.CancelRequestModelLoad(assetId, VrAssetFormat.VOX));
+            Assert.IsFalse(catalog.IsLoading(assetId, VrAssetFormat.VOX));
+            Assert.IsTrue(catalog.IsLoading(assetId, VrAssetFormat.GLTF2));
+            Assert.IsTrue(catalog.IsLoading(assetId, VrAssetFormat.IMM));
+            Assert.IsTrue(catalog.CancelRequestModelLoad(assetId, VrAssetFormat.IMM));
+            Assert.IsTrue(catalog.CancelRequestModelLoad(assetId, VrAssetFormat.GLTF2));
+        }
+
+        [TestCase("0")]
+        [TestCase("GLTF")]
+        public void Init_RetainsDifferentFormatsAndLegacyCacheForSameAsset(string legacyFolder)
+        {
+            var catalog = CreateCatalog();
+            string assetId = $"unit-test-cache-formats-{Guid.NewGuid():N}";
+            string assetDirectory = catalog.GetCacheDirectoryForAsset(assetId);
+            m_CachePathsToCleanup.Add(assetDirectory);
+            foreach (var format in new[] { VrAssetFormat.OBJ, VrAssetFormat.OBJ_NGON })
+            {
+                string directory = catalog.GetCacheDirectoryForAsset(assetId, format);
+                Directory.CreateDirectory(directory);
+                File.WriteAllText(Path.Combine(directory, "model.obj"), "test");
+                File.WriteAllText(Path.Combine(directory, ".icosa-format"), format.ToString());
+            }
+            string legacyDirectory = Path.Combine(assetDirectory, legacyFolder);
+            Directory.CreateDirectory(legacyDirectory);
+            File.WriteAllText(Path.Combine(legacyDirectory, "legacy.ply"), "test");
+
+            catalog.Init();
+
+            var obj = catalog.GetModel(assetId, VrAssetFormat.OBJ);
+            var ngon = catalog.GetModel(assetId, VrAssetFormat.OBJ_NGON);
+            Assert.NotNull(obj);
+            Assert.NotNull(ngon);
+            Assert.AreNotSame(obj, ngon);
+            Assert.AreNotEqual(obj.GetLocation().AbsolutePath, ngon.GetLocation().AbsolutePath);
+            Assert.AreEqual(VrAssetFormat.OBJ_NGON, ngon.GalleryFormat);
+            var legacy = catalog.GetModel(assetId);
+            Assert.NotNull(legacy);
+            Assert.AreEqual(VrAssetFormat.PLY, legacy.GalleryFormat);
+            Assert.IsNull(legacy.AssetFormat);
+            Assert.IsNull(catalog.GetModel(assetId, VrAssetFormat.PLY),
+                "An extension-only cache must not satisfy a request for an exact service format");
+            catalog.RequestModelLoad(assetId, "exact format", VrAssetFormat.PLY);
+            Assert.IsTrue(catalog.IsLoading(assetId, VrAssetFormat.PLY));
+            Assert.AreSame(legacy, catalog.GetModel(assetId));
+            catalog.CancelRequestModelLoad(assetId, VrAssetFormat.PLY);
+        }
+
+        private IcosaAssetCatalog CreateCatalog()
+        {
+            m_AppObject = new GameObject("TestApp");
+            sm_AppInstanceField.SetValue(null, m_AppObject.AddComponent<App>());
+            m_CatalogObject = new GameObject("IcosaAssetCatalog");
+            var catalog = m_CatalogObject.AddComponent<IcosaAssetCatalog>();
+            catalog.Init();
+            return catalog;
+        }
+
+        [Test]
+        public void ModelPreloadsIncludeOnlyDistinctOrdinaryGalleryRequests()
+        {
+            var models = new[]
+            {
+                new TiltModels75 { AssetId = "mixed", AssetFormat = "GLTF2" },
+                new TiltModels75 { AssetId = "mixed", AssetFormat = "VOX" },
+                new TiltModels75 { AssetId = "mixed", AssetFormat = "IMM" },
+                new TiltModels75 { AssetId = "mixed", AssetFormat = "GLTF2" },
+                new TiltModels75 { AssetId = "legacy" },
+                new TiltModels75 { AssetId = "future", AssetFormat = "FUTURE_FORMAT" },
+                new TiltModels75 { FilePath = "local.obj" },
+                new TiltModels75 { AssetId = "embedded", AssetFormat = "VOX", EditableVoxPaths = new[] { "vox/widgets/0.vox" } }
+            };
+            var getRequests = typeof(WidgetManager).GetMethod("GetModelLoadRequests",
+                BindingFlags.Static | BindingFlags.NonPublic);
+            var requests = (HashSet<IcosaAssetCatalog.ModelCacheKey>)getRequests.Invoke(null, new object[] { models });
+
+            CollectionAssert.AreEquivalent(new[]
+            {
+                new IcosaAssetCatalog.ModelCacheKey("mixed", VrAssetFormat.GLTF2),
+                new IcosaAssetCatalog.ModelCacheKey("mixed", VrAssetFormat.VOX),
+                new IcosaAssetCatalog.ModelCacheKey("legacy", VrAssetFormat.Unknown)
+            }, requests);
+        }
+
         [Test]
         public void Init_RetainsCachedAssetsForSupportedFormats()
         {

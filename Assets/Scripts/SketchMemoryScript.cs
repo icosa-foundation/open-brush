@@ -39,6 +39,7 @@ namespace TiltBrush
         public static SketchMemoryScript m_Instance;
 
         public event Action OperationStackChanged;
+        public event Action UnrecordedChangesChanged;
         public event Action NetworkOperationStackChanged;
         public Action<BaseCommand> CommandPerformed;
         public Action<BaseCommand> CommandUndo;
@@ -299,10 +300,11 @@ namespace TiltBrush
                 savedUnrecordedRevision ?? m_UnrecordedChangesRevision);
         }
 
-        // Scripted document mutations can be persistent without an undo command.
+        // Persistent edits without undo commands still need save and discard protection.
         public void MarkUnrecordedChange()
         {
             ++m_UnrecordedChangesRevision;
+            UnrecordedChangesChanged?.Invoke();
         }
 
         public bool WillVertCountPutUsOverTheMemoryLimit(int numVerts)

@@ -1332,6 +1332,154 @@ MonoBehaviour:
       Colors lets you vary the copies.]'
     m_Metadata:
       m_Items: []
+  - m_Id: 82311120000000001
+    m_Localized: "[PREVIOUS_CHAPTER] Previous Chapter"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000002
+    m_Localized: "[NEXT_CHAPTER] Next Chapter"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000003
+    m_Localized: "[PREVIOUS_VIEWPOINT] Previous Viewpoint"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000004
+    m_Localized: "[NEXT_VIEWPOINT] Next Viewpoint"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000005
+    m_Localized: "[SELECT_PREVIOUS_VIEWPOINT] Select Previous Viewpoint"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000006
+    m_Localized: "[SELECT_NEXT_VIEWPOINT] Select Next Viewpoint"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000007
+    m_Localized: "[MOVE_TO_VIEWPOINT] Move to Selected Viewpoint"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000008
+    m_Localized: "[PLAY] Play / Continue IMM"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000009
+    m_Localized: "[PAUSE] Pause IMM"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000010
+    m_Localized: "[CHAPTER] Chapter {0} / {1}"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000011
+    m_Localized: "[VIEWPOINT] Viewpoint {0} / {1}"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000012
+    m_Localized: "[LOADING] Loading IMM…"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000013
+    m_Localized: "[CHANGING_CHAPTER] Changing chapter…"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000014
+    m_Localized: "[QUILL_UNAVAILABLE] Native Quill loading is not yet available"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000015
+    m_Localized: "[LOOP] Loop"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000016
+    m_Localized: "[SPATIAL] Spatial"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000017
+    m_Localized: "[MAKE_EDITABLE] Make Editable"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000018
+    m_Localized: "[CONVERT] Convert Current Frame to Editable Strokes"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000019
+    m_Localized: "[CONVERT_HINT] Replaces this IMM only. Other sketch content is preserved."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000020
+    m_Localized: "[IMPORT_SKYDOME] Import Skydome"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000021
+    m_Localized: "[IMPORT_IMM_SKYDOME] Import IMM Skydome"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000022
+    m_Localized: "[SKYDOME_HINT] Use the skydome visible at the current IMM frame."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000023
+    m_Localized: "[CONVERT_FAILED] Could not convert the current IMM frame to editable strokes."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000024
+    m_Localized: "[NO_SKYDOME] No visible skydome at the current IMM frame."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000025
+    m_Localized: "[SKYDOME_FAILED] Could not import the IMM skydome."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000026
+    m_Localized: "[PLAYBACK_FAILED] Model playback failed"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000027
+    m_Localized: "[LOAD_INCOMPLETE] Native IMM document did not finish loading."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000028
+    m_Localized: "[UNLOAD_INCOMPLETE] Previous native sketch did not finish unloading."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000029
+    m_Localized: "[LOAD_REFERENCE_FAILED] Could not load IMM reference"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000030
+    m_Localized: "[READ_CACHE_FAILED] Could not read cached IMM"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000031
+    m_Localized: "[DOWNLOAD_FAILED] Could not download IMM"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000032
+    m_Localized: "[CACHE_FAILED] Could not cache IMM"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000033
+    m_Localized: "[CACHE_GALLERY_FAILED] Could not cache gallery reference"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000034
+    m_Localized: "[LOAD_GALLERY_FAILED] Could not load gallery reference"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000035
+    m_Localized: "[LOAD_TIMEOUT] Native IMM load timed out."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000036
+    m_Localized: "[VIDEO_FAILED] Video playback failed"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000037
+    m_Localized: "[SOUND_FAILED] Sound playback failed"
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

@@ -28,6 +28,7 @@ namespace TiltBrush
             public ModelWidget modelWidget;
             public string subtree;
             public bool pinned;
+            public ModelPlaybackState playback;
             public bool tinted;
             public uint groupId;
             public int layerId;
@@ -115,12 +116,14 @@ namespace TiltBrush
             }
             var widgetModels = widgets.Select(w => w.Model).Distinct();
 
-            Dictionary<Model.Location, List<WidgetMetadata>> modelLocationMap =
-                new Dictionary<Model.Location, List<WidgetMetadata>>();
-            var modelSplitsMap = new Dictionary<Model.Location, (List<string> m_SplitMeshPaths, List<string> m_NotSplittableMeshPaths)>();
+            // Pending gallery models have no file path, so neither location alone nor asset ID alone
+            // can distinguish their saved representations.
+            var modelLocationMap = new Dictionary<(Model.Location location, string assetId, string assetFormat), List<WidgetMetadata>>();
+            var modelSplitsMap = new Dictionary<(Model.Location location, string assetId, string assetFormat),
+                (List<string> m_SplitMeshPaths, List<string> m_NotSplittableMeshPaths)>();
             foreach (var model in widgetModels)
             {
-                var loc = model.GetLocation();
+                var loc = GetModelSaveKey(model);
                 modelLocationMap[loc] = new List<WidgetMetadata>();
                 modelSplitsMap[loc] = (model.m_SplitMeshPaths, model.m_NotSplittableMeshPaths);
             }
@@ -131,10 +134,11 @@ namespace TiltBrush
                 newEntry.modelWidget = widget;
                 newEntry.subtree = widget.Subtree;
                 newEntry.pinned = widget.Pinned;
+                newEntry.playback = widget.GetComponent<ModelPlaybackController>()?.GetSaveState();
                 newEntry.groupId = groupIdMapping.GetId(widget.Group);
                 newEntry.widgetLink = links?.Get(widget);
                 newEntry.layerId = App.Scene.GetIndexOfCanvas(widget.Canvas);
-                modelLocationMap[widget.Model.GetLocation()].Add(newEntry);
+                modelLocationMap[GetModelSaveKey(widget.Model)].Add(newEntry);
             }
 
             List<TiltModels75> models = new List<TiltModels75>();
@@ -148,13 +152,17 @@ namespace TiltBrush
                 {
                     var val = new TiltModels75
                     {
-                        Location = elem.Key,
+                        Location = elem.Key.location,
+                        ImmSketch = NativeImmImport.IsSketchLocation(elem.Key.location),
+                        AssetFormat = elem.Key.assetFormat,
                         SplitMeshPaths = modelSplitsMap[elem.Key].m_SplitMeshPaths?.ToList(),
                         NotSplittableMeshPaths = modelSplitsMap[elem.Key].m_NotSplittableMeshPaths?.ToList(),
                     };
 
                     // Order and align the metadata.
                     WidgetMetadata[] ordered = widgetGroup.OrderBy(ByTranslation).ToArray();
+                    val.PlaybackStates = ordered.Any(entry => entry.playback != null)
+                        ? ordered.Select(entry => entry.playback).ToArray() : null;
                     val.WidgetLinks = ordered.Select(m => m.widgetLink).ToArray();
                     val.PinStates = new bool[ordered.Length];
                     val.Subtrees = new string[ordered.Length];
@@ -195,7 +203,15 @@ namespace TiltBrush
             return models
                 .Concat(links?.SelectedOnly == true ? Enumerable.Empty<TiltModels75>() :
                     ModelCatalog.m_Instance.MissingModels.Select(m => links == null ? m : links.CaptureMissing(m)))
-                .OrderBy(ByModelLocation).ToArray();
+                .OrderBy(ByModelLocation).ThenBy(model => model.AssetFormat).ToArray();
+        }
+
+        private static (Model.Location location, string assetId, string assetFormat) GetModelSaveKey(Model model)
+        {
+            var location = model.GetLocation();
+            return location.GetLocationType() == Model.Location.Type.IcosaAssetId
+                ? (Model.Location.IcosaAsset(model.AssetId, null), model.AssetId, model.AssetFormat)
+                : (location, null, null);
         }
 
         public static TiltText[] GetTiltText(GroupIdMapping groupIdMapping, WidgetLinkSaveContext links = null)
@@ -368,6 +384,7 @@ namespace TiltBrush
                     video.Paused = !widget.VideoController.Playing;
                     video.Time = widget.VideoController.Time;
                     video.Volume = widget.VideoController.Volume;
+                    video.Loop = widget.VideoController.Loop;
                 }
                 return video;
             }

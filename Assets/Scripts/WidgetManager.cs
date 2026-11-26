@@ -847,6 +847,7 @@ namespace TiltBrush
         // Returns: path starting after Models/ or null if the path is not to the Models directory
         public static string GetModelSubpath(string fullPath)
         {
+            fullPath = fullPath.Replace('\\', '/');
             string media = GetPathRootedAtMedia(fullPath);
             string blocks = GetPathRootedAtBlocks(fullPath);
             string modelPath = "Media Library/Models/";
@@ -854,6 +855,11 @@ namespace TiltBrush
             if (media != null && media.StartsWith(modelPath))
             {
                 return media.Substring(modelPath.Length);
+            }
+
+            if (media != null && media.StartsWith("Media Library/Quill/", StringComparison.OrdinalIgnoreCase))
+            {
+                return System.IO.Path.GetRelativePath(App.ModelLibraryPath(), fullPath).Replace('\\', '/');
             }
 
             if (blocks != null)
@@ -1758,26 +1764,25 @@ namespace TiltBrush
 
                         if (App.Config.kModelWidgetsWaitForLoad)
                         {
-                            var assetIds = models
-                                .Select(tm => tm.AssetId).Where(aid => aid != null).ToArray();
+                            var requests = GetModelLoadRequests(models);
                             // Kick off a bunch of loads...
-                            foreach (var assetId in assetIds)
+                            foreach (var request in requests)
                             {
-                                if (App.IcosaAssetCatalog.GetAssetLoadState(assetId)
+                                if (App.IcosaAssetCatalog.GetAssetLoadState(request.AssetId, request.Format)
                                     != IcosaAssetCatalog.AssetLoadState.Loaded)
                                 {
-                                    App.IcosaAssetCatalog.RequestModelLoad(assetId, "tiltload");
+                                    App.IcosaAssetCatalog.RequestModelLoad(request.AssetId, "tiltload", request.Format);
                                 }
                             }
                             // ... and wait for them to complete
                             // No widgets have been created yet, so we can't use AreMediaWidgetsStillLoading.
-                            bool IsLoading(string assetId)
+                            bool IsLoading(IcosaAssetCatalog.ModelCacheKey request)
                             {
-                                var state = App.IcosaAssetCatalog.GetAssetLoadState(assetId);
+                                var state = App.IcosaAssetCatalog.GetAssetLoadState(request.AssetId, request.Format);
                                 return (state == IcosaAssetCatalog.AssetLoadState.Downloading ||
                                     state == IcosaAssetCatalog.AssetLoadState.Loading);
                             }
-                            while (assetIds.Any(IsLoading))
+                            while (requests.Any(IsLoading))
                             {
                                 yield return null;
                             }
@@ -1851,6 +1856,35 @@ namespace TiltBrush
             m_loadingTiltImages75 != null ||
             m_loadingTiltVideos != null;
 
+        private static bool TryGetGalleryLoadRequest(string assetId, string assetFormat,
+            out IcosaAssetCatalog.ModelCacheKey request)
+        {
+            request = default;
+            if (assetId == null) return false;
+            var format = VrAssetFormat.Unknown;
+            // Missing formats use ordinary selection; unsupported explicit formats never fall back.
+            if (assetFormat != null && !Model.TryParseGalleryFormat(assetFormat, out format)) return false;
+            request = new IcosaAssetCatalog.ModelCacheKey(assetId, format);
+            return true;
+        }
+
+        private static HashSet<IcosaAssetCatalog.ModelCacheKey> GetModelLoadRequests(IEnumerable<TiltModels75> models)
+        {
+            var requests = new HashSet<IcosaAssetCatalog.ModelCacheKey>();
+            foreach (var model in models)
+            {
+                // Embedded VOX widgets restore their payload from the sketch, not the gallery.
+                // Widget restoration waits for the native IMM loader, which checks its disk cache.
+                // Ordinary preload can download an already cached IMM after restart. Skipping it
+                // means a missing IMM starts downloading when restoration reaches its widget.
+                if (model.EditableVoxPaths == null &&
+                    TryGetGalleryLoadRequest(model.AssetId, model.AssetFormat, out var request) &&
+                    request.Format != VrAssetFormat.IMM)
+                    requests.Add(request);
+            }
+            return requests;
+        }
+
         /// Returns true if any widgets are still waiting for their data.
         public bool AreMediaWidgetsStillLoading()
         {
@@ -1859,10 +1893,17 @@ namespace TiltBrush
             IcosaAssetCatalog pac = App.IcosaAssetCatalog;
             foreach (var gwd in m_ModelWidgets)
             {
-                Model.Location loc = gwd.WidgetScript.Model.GetLocation();
-                if (loc.GetLocationType() == Model.Location.Type.IcosaAssetId)
+                var playback = gwd.WidgetScript.GetComponent<ModelPlaybackController>();
+                // Hidden layers retain pending restoration until their controllers can update.
+                if (IsWidgetObjectActiveInHierarchy(gwd) && playback != null && playback.IsRestoring) return true;
+                var nativeReference = gwd.WidgetScript.GetComponentInChildren<NativeImmReference>();
+                if (nativeReference != null && nativeReference.IsLoading) return true;
+                Model model = gwd.WidgetScript.Model;
+                Model.Location loc = model.GetLocation();
+                if (loc.GetLocationType() == Model.Location.Type.IcosaAssetId &&
+                    TryGetGalleryLoadRequest(loc.AssetId, model.AssetFormat, out var request))
                 {
-                    switch (pac.GetAssetLoadState(loc.AssetId))
+                    switch (pac.GetAssetLoadState(request.AssetId, request.Format))
                     {
                         case IcosaAssetCatalog.AssetLoadState.Downloading:
                         case IcosaAssetCatalog.AssetLoadState.Loading:

@@ -159,7 +159,7 @@ namespace TiltBrush
 
         /// Spawn a model.
         /// Precondition: Model must have m_Valid == true.
-        protected void SpawnValidModel(Model model)
+        protected void SpawnValidModel(Model model, Quaternion? rotation = null)
         {
             if (!model.m_Valid)
             {
@@ -169,7 +169,7 @@ namespace TiltBrush
             TrTransform xfSpawn = Coords.AsGlobal[transform]
                 * TrTransform.R(Quaternion.AngleAxis(180, Vector3.up));
             CreateWidgetCommand createCommand = new CreateWidgetCommand(
-                WidgetManager.m_Instance.ModelWidgetPrefab, xfSpawn, m_PreviewBaseRotation,
+                WidgetManager.m_Instance.ModelWidgetPrefab, xfSpawn, rotation ?? m_PreviewBaseRotation,
                 false, SelectionManager.m_Instance.SnappingGridSize, SelectionManager.m_Instance.SnappingAngle
             );
             SketchMemoryScript.m_Instance.PerformAndRecordCommand(createCommand);

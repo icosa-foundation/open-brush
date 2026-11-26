@@ -1,4 +1,4 @@
-﻿// Copyright 2020 The Tilt Brush Authors
+// Copyright 2020 The Tilt Brush Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,6 +15,7 @@
 using UnityEngine;
 using System;
 using System.Linq;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Text.RegularExpressions;
@@ -165,6 +166,7 @@ namespace TiltBrush
         public static string
             ANY = "",
             TILT = "TILT",
+            IMM = "IMM",
             BLOCKS = "BLOCKS",
             GLTF = "GLTF",
             GLTF1 = "GLTF1",
@@ -173,6 +175,7 @@ namespace TiltBrush
             FBX = "FBX",
             VOX = "VOX",
             NOT_TILT = "-TILT",
+            NOT_IMM = "-IMM",
             NOT_BLOCKS = "-BLOCKS",
             NOT_GLTF = "-GLTF",
             NOT_GLTF1 = "-GLTF1",
@@ -225,7 +228,7 @@ namespace TiltBrush
         static VrAssetFormat[] GetSupportedIcosaFormats()
         {
             // Note: FBX and USD are not included as they're only supported for local files, not Icosa assets.
-            // VOX, GLTF2, GLTF are highest priority, followed by OBJ variants and PLY.
+            // Preserve ordinary gallery/sketch format selection; native IMM uses RequestImmModel.
             // OBJ_NGON is an OBJ file with n-gon faces (faces with >3 vertices).
             return new[]
             {
@@ -348,6 +351,7 @@ namespace TiltBrush
                 }
             }
 
+            public bool HasImm { get; }
             public Model Model { get { return App.IcosaAssetCatalog.GetModel(AssetId); } }
 
             public AssetDetails(
@@ -357,6 +361,7 @@ namespace TiltBrush
                 HumanName = json["displayName"].ToString();
                 AssetId = json["assetId"].ToString();
                 AccountName = accountName;
+                HasImm = json["formats"]?.Any(format => format["formatType"]?.ToString() == "IMM") == true;
                 var rotation = json["presentationParams"]?["orientingRotation"];
                 if (rotation != null)
                 {
@@ -466,6 +471,7 @@ namespace TiltBrush
                     {
                         // TODO: fix aspect ratio of thumbnail
                         RawImage imageData = await new ThreadedImageReader(thumbnailBytes, thumbnailUrl);
+                        if (m_Thumbnail == null) return;
 
                         UnityEngine.Profiling.Profiler.BeginSample("AssetDetails.DownloadThumbnail:LoadImage");
                         if (imageData != null)
@@ -543,6 +549,67 @@ namespace TiltBrush
             public IcosaQueryParameters QueryParams;
         }
 
+        public readonly struct ModelCacheKey : IEquatable<ModelCacheKey>
+        {
+            public readonly string AssetId;
+            public readonly VrAssetFormat Format;
+
+            public ModelCacheKey(string assetId, VrAssetFormat format)
+            {
+                AssetId = assetId;
+                Format = format;
+            }
+
+            public bool Equals(ModelCacheKey other) => AssetId == other.AssetId && Format == other.Format;
+            public override bool Equals(object obj) => obj is ModelCacheKey other && Equals(other);
+            public override int GetHashCode() => (AssetId, Format).GetHashCode();
+            public static bool operator ==(ModelCacheKey a, ModelCacheKey b) => a.Equals(b);
+            public static bool operator !=(ModelCacheKey a, ModelCacheKey b) => !a.Equals(b);
+            public override string ToString() => $"{AssetId}/{Format}";
+        }
+
+        private static ModelCacheKey GetModelKey(Model model) =>
+            new ModelCacheKey(model.AssetId, model.AssetFormat == null ? VrAssetFormat.Unknown : model.GalleryFormat);
+
+        // Unknown means the existing ordinary gallery selection, never any cached representation.
+        private ModelCacheKey ResolveModelKey(string assetId, VrAssetFormat format = VrAssetFormat.Unknown)
+        {
+            if (format == VrAssetFormat.Unknown && assetId != null)
+            {
+                if (!m_DefaultModelFormats.TryGetValue(assetId, out format))
+                {
+                    // Preserve the existing ordinary cached selection, including when offline.
+                    var legacyKey = new ModelCacheKey(assetId, VrAssetFormat.Unknown);
+                    if (m_ModelsByKey != null && m_ModelsByKey.ContainsKey(legacyKey))
+                    {
+                        m_DefaultModelFormats[assetId] = VrAssetFormat.Unknown;
+                        return legacyKey;
+                    }
+                    if (m_ModelsByKey != null)
+                    {
+                        foreach (var candidate in GetSupportedIcosaFormats())
+                        {
+                            if (m_ModelsByKey.ContainsKey(new ModelCacheKey(assetId, candidate)))
+                            {
+                                format = candidate;
+                                break;
+                            }
+                        }
+                    }
+                    if (format == VrAssetFormat.Unknown)
+                        TryGetDownloadFormat(GetJsonForAsset(assetId), GetSupportedIcosaFormats(),
+                            out _, out format, out _);
+                    if (format != VrAssetFormat.Unknown) m_DefaultModelFormats[assetId] = format;
+                }
+            }
+            return new ModelCacheKey(assetId, format);
+        }
+
+        private ModelCacheKey GetRequestKey(AssetGetter request) =>
+            ResolveModelKey(request.Asset.Id, request.Asset.SelectedFormat != VrAssetFormat.Unknown
+                ? request.Asset.SelectedFormat
+                : request.Asset.DesiredTypes.Length == 1 ? request.Asset.DesiredTypes[0] : VrAssetFormat.Unknown);
+
         /// A request to pull a Model into memory.
         /// It's assumed that the Model already exists on disk.
         public class ModelLoadRequest
@@ -551,6 +618,7 @@ namespace TiltBrush
             /// The reason for the Model being pulled into memory.
             public readonly string Reason;
             public string AssetId => Model.AssetId;
+            public ModelCacheKey Key => GetModelKey(Model);
             public ModelLoadRequest(Model model, string reason)
             {
                 Model = model;
@@ -573,32 +641,34 @@ namespace TiltBrush
         private List<ModelLoadRequest> m_LoadQueue;
         /// Asset downloads waiting for a free slot (see kMaxConcurrentDownloads). Dispatched in
         /// UpdateCatalog by PumpDownloadQueue. Items here are not yet in m_ActiveRequests.
-        private readonly List<(string assetId, string reason)> m_PendingDownloads =
-            new List<(string assetId, string reason)>();
+        private readonly List<(ModelCacheKey key, string reason)> m_PendingDownloads =
+            new List<(ModelCacheKey key, string reason)>();
         /// Memoization data for IsLoading().
         /// Set this to null to invalidate it; or (if you are very confident) mutate it.
         /// Invariant: either null, or the union of m_ActiveRequests, m_RequestLoadQueue, m_LoadQueue.
-        private HashSet<string> m_IsLoadingMemo = null;
+        private HashSet<ModelCacheKey> m_IsLoadingMemo = null;
         /// Models that have been started loading (LoadModel called) but aren't valid yet.
         /// This prevents re-queuing models that are being loaded asynchronously.
-        private HashSet<string> m_ModelsBeingLoaded = new HashSet<string>();
+        private HashSet<ModelCacheKey> m_ModelsBeingLoaded = new HashSet<ModelCacheKey>();
         private string m_CacheDir;
         private string m_ThumbnailCacheDir;
-        private Dictionary<string, Model> m_ModelsByAssetId;
+        private Dictionary<ModelCacheKey, Model> m_ModelsByKey;
+        private const string kModelCacheFormatMarker = ".icosa-format";
+        private readonly Dictionary<string, VrAssetFormat> m_DefaultModelFormats = new Dictionary<string, VrAssetFormat>();
         private Dictionary<string, JObject> m_AssetJsonByAssetId;
         private Dictionary<IcosaSetType, AssetSet> m_AssetSetByType;
         private bool m_NotifyListeners;
 
         // LRU bookkeeping for the in-memory model cache. Entries exist only while a model is loaded
         // (m_Valid); they are removed on unload/evict via PruneModelCacheBookkeeping.
-        private readonly Dictionary<string, long> m_LoadedModelBytes = new Dictionary<string, long>();
-        private readonly Dictionary<string, float> m_ModelLastUsedTime = new Dictionary<string, float>();
+        private readonly Dictionary<ModelCacheKey, long> m_LoadedModelBytes = new Dictionary<ModelCacheKey, long>();
+        private readonly Dictionary<ModelCacheKey, float> m_ModelLastUsedTime = new Dictionary<ModelCacheKey, float>();
         // AssetIds the active panel is currently displaying. These are pinned (never evicted) so the
         // visible page can't be unloaded out from under the user - which would thrash-reload it.
         private readonly HashSet<string> m_VisibleAssetIds = new HashSet<string>();
         // AssetIds measured (after a load) to exceed kOversizedModelByteThreshold. We stop
         // auto-preloading these. Learned per session; not persisted.
-        private readonly HashSet<string> m_OversizedModelIds = new HashSet<string>();
+        private readonly HashSet<ModelCacheKey> m_OversizedModelIds = new HashSet<ModelCacheKey>();
 
         private AwaitableRateLimiter m_thumbnailFetchLimiter =
             new AwaitableRateLimiter(kThumbnailFetchRate, kThumbnailFetchMaxCount);
@@ -606,10 +676,12 @@ namespace TiltBrush
             new RateLimiter(maxEventsPerFrame: kThumbnailReadRate);
 
         /// Returns true if the assetId is in any of our download or load queues
-        public bool IsLoading(string assetId)
+        public bool IsLoading(string assetId, VrAssetFormat format = VrAssetFormat.Unknown)
         {
+            var key = ResolveModelKey(assetId, format);
+            if (key.Format == VrAssetFormat.IMM && IsLoadingImm(assetId)) return true;
             // Check if currently being loaded asynchronously
-            if (m_ModelsBeingLoaded.Contains(assetId))
+            if (m_ModelsBeingLoaded.Contains(key))
             {
                 return true;
             }
@@ -617,13 +689,13 @@ namespace TiltBrush
             // This needs caching because it's hammered every frame by the model buttons :-/
             if (m_IsLoadingMemo == null)
             {
-                m_IsLoadingMemo = new HashSet<string>();
-                m_IsLoadingMemo.UnionWith(m_ActiveRequests.Select(request => request.Asset.Id));
-                m_IsLoadingMemo.UnionWith(m_PendingDownloads.Select(d => d.assetId));
-                m_IsLoadingMemo.UnionWith(m_RequestLoadQueue.Select(request => request.AssetId));
-                m_IsLoadingMemo.UnionWith(m_LoadQueue.Select(request => request.AssetId));
+                m_IsLoadingMemo = new HashSet<ModelCacheKey>();
+                m_IsLoadingMemo.UnionWith(m_ActiveRequests.Select(request => GetRequestKey(request)));
+                m_IsLoadingMemo.UnionWith(m_PendingDownloads.Select(d => ResolveModelKey(d.key.AssetId, d.key.Format)));
+                m_IsLoadingMemo.UnionWith(m_RequestLoadQueue.Select(request => request.Key));
+                m_IsLoadingMemo.UnionWith(m_LoadQueue.Select(request => request.Key));
             }
-            return m_IsLoadingMemo.Contains(assetId);
+            return m_IsLoadingMemo.Contains(key);
         }
 
         private void EnsureCatalogsExist()
@@ -674,7 +746,8 @@ namespace TiltBrush
             FileUtils.InitializeDirectoryWithUserError(GetVersionedCacheDirectory(), "Failed to create asset cache");
             DeleteOldCacheDirectories();
 
-            m_ModelsByAssetId = new Dictionary<string, Model>();
+            m_ModelsByKey = new Dictionary<ModelCacheKey, Model>();
+            m_DefaultModelFormats.Clear();
             // InitCatalogQueries();
 
             try
@@ -682,13 +755,18 @@ namespace TiltBrush
                 foreach (string folderPath in EnumerateCacheDirectories())
                 {
                     string assetId = Path.GetFileName(folderPath);
-                    string modelFile = ValidModelCache(folderPath);
-                    if (modelFile != null)
+                    var formatDirectories = Directory.GetDirectories(folderPath)
+                        .Where(dir => File.Exists(Path.Combine(dir, kModelCacheFormatMarker)) &&
+                            Enum.IsDefined(typeof(VrAssetFormat), Path.GetFileName(dir)) &&
+                            Path.GetFileName(dir) != nameof(VrAssetFormat.Unknown)).ToArray();
+                    if (formatDirectories.Length > 0)
                     {
-                        string path = Path.Combine(folderPath, modelFile);
-                        m_ModelsByAssetId[assetId] = new Model(assetId, path);
+                        foreach (var directory in formatDirectories)
+                            RegisterCachedModel(assetId, directory,
+                                (VrAssetFormat)Enum.Parse(typeof(VrAssetFormat), Path.GetFileName(directory)));
                     }
-                    else
+                    if (!RegisterCachedModel(assetId, folderPath, excludedDirectories: formatDirectories) &&
+                        formatDirectories.Length == 0)
                     {
                         Debug.LogWarningFormat("Deleting invalid cache folder {0}", folderPath);
                         Directory.Delete(folderPath, true);
@@ -728,7 +806,7 @@ namespace TiltBrush
                     TriangleCountMax = DEFAULT_MODEL_TRIANGLE_COUNT_MAX,
                     License = LicenseChoices.ANY,
                     OrderBy = OrderByChoices.NEWEST,
-                    Formats = new[] { FormatChoices.NOT_TILT, FormatChoices.GLTF2, FormatChoices.OBJ, FormatChoices.VOX },
+                    Formats = new[] { FormatChoices.NOT_TILT, FormatChoices.GLTF2, FormatChoices.OBJ, FormatChoices.VOX, FormatChoices.IMM },
                     Curated = CuratedChoices.ANY,
                     Category = CategoryChoices.ANY
                 }
@@ -742,7 +820,7 @@ namespace TiltBrush
                     TriangleCountMax = DEFAULT_MODEL_TRIANGLE_COUNT_MAX,
                     License = LicenseChoices.REMIXABLE,
                     OrderBy = OrderByChoices.LIKED_TIME,
-                    Formats = new[] { FormatChoices.NOT_TILT, FormatChoices.GLTF2, FormatChoices.OBJ, FormatChoices.VOX },
+                    Formats = new[] { FormatChoices.NOT_TILT, FormatChoices.GLTF2, FormatChoices.OBJ, FormatChoices.VOX, FormatChoices.IMM },
                     Curated = CuratedChoices.ANY,
                     Category = CategoryChoices.ANY
                 }
@@ -757,7 +835,7 @@ namespace TiltBrush
                     TriangleCountMax = DEFAULT_MODEL_TRIANGLE_COUNT_MAX,
                     License = LicenseChoices.REMIXABLE,
                     OrderBy = OrderByChoices.BEST,
-                    Formats = new[] { FormatChoices.NOT_TILT, FormatChoices.GLTF2, FormatChoices.OBJ, FormatChoices.VOX },
+                    Formats = new[] { FormatChoices.NOT_TILT, FormatChoices.GLTF2, FormatChoices.OBJ, FormatChoices.VOX, FormatChoices.IMM },
                     Curated = CuratedChoices.TRUE,
                     Category = CategoryChoices.ANY
                 }
@@ -772,7 +850,7 @@ namespace TiltBrush
                     TriangleCountMax = DEFAULT_MODEL_TRIANGLE_COUNT_MAX,
                     License = LicenseChoices.REMIXABLE,
                     OrderBy = OrderByChoices.DISPLAY_NAME,
-                    Formats = new[] { FormatChoices.NOT_TILT, FormatChoices.GLTF2, FormatChoices.OBJ, FormatChoices.VOX },
+                    Formats = new[] { FormatChoices.NOT_TILT, FormatChoices.GLTF2, FormatChoices.OBJ, FormatChoices.VOX, FormatChoices.IMM },
                     Curated = CuratedChoices.ANY,
                     Category = CategoryChoices.ANY
                 }
@@ -787,27 +865,31 @@ namespace TiltBrush
             RefreshFetchCoroutines();
         }
 
-        public AssetLoadState GetAssetLoadState(string assetId)
+        public AssetLoadState GetAssetLoadState(string assetId, VrAssetFormat format = VrAssetFormat.Unknown)
         {
-            if (GetModel(assetId) is Model m)
+            var key = ResolveModelKey(assetId, format);
+            if (key.Format == VrAssetFormat.IMM && IsLoadingImm(assetId))
+                return DownloadingImmAssetId == assetId ? AssetLoadState.Downloading : AssetLoadState.Loading;
+            if (m_ModelsBeingLoaded.Contains(key)) return AssetLoadState.Loading;
+            if (GetModel(assetId, format) is Model m)
             {
                 // A model may be present in memory but also be still loading -- eg if someone
                 // requested that the load be retried. In this case it's kind of in two states;
                 // I'm somewhat arbitrarily choosing one.
                 if (m.m_Valid) { return AssetLoadState.Loaded; }
                 else if (m.Error != null) { return AssetLoadState.LoadFailed; }
-                else if (IsLoading(assetId))
+                else if (IsLoading(assetId, format))
                 {
                     foreach (var elt in m_RequestLoadQueue)
                     {
-                        if (elt.AssetId == assetId)
+                        if (elt.Key == key)
                         {
                             return AssetLoadState.Loading;
                         }
                     }
                     foreach (var elt in m_LoadQueue)
                     {
-                        if (elt.AssetId == assetId)
+                        if (elt.Key == key)
                         {
                             return AssetLoadState.Loading;
                         }
@@ -826,23 +908,150 @@ namespace TiltBrush
             {
                 foreach (var downloadRequest in m_ActiveRequests)
                 {
-                    if (downloadRequest.Asset.Id == assetId)
+                    if (GetRequestKey(downloadRequest) == key)
                     {
                         return AssetLoadState.Downloading;
                     }
                 }
-                return AssetLoadState.NotDownloaded;
+                return IsLoading(assetId, format) ? AssetLoadState.Downloading : AssetLoadState.NotDownloaded;
             }
         }
 
-        public string GetCacheDirectoryForAsset(string asset)
+        public string LoadingImmAssetId { get; private set; }
+        public bool IsLoadingImm(string assetId) => LoadingImmAssetId == assetId || DownloadingImmAssetId == assetId;
+
+        public bool RequestImmModel(string assetId, Action<Model> onReady)
+        {
+            if (!string.IsNullOrEmpty(LoadingImmAssetId) || !string.IsNullOrEmpty(DownloadingImmAssetId)) return false;
+            if (IsLoading(assetId, VrAssetFormat.IMM)) return false;
+            GetImmCacheDirectoryForAsset(assetId);
+            LoadingImmAssetId = assetId;
+            StartCoroutine(LoadImmModelCoroutine(assetId, onReady));
+            return true;
+        }
+
+        private IEnumerator LoadImmModelCoroutine(string assetId, Action<Model> onReady)
+        {
+            try
+            {
+                var key = new ModelCacheKey(assetId, VrAssetFormat.IMM);
+                if (m_ModelsByKey.TryGetValue(key, out var cached) && cached.IsNativeImmModel &&
+                    cached.m_Valid && File.Exists(cached.GetLocation().AbsolutePath))
+                {
+                    onReady?.Invoke(cached);
+                    yield break;
+                }
+                string path = null;
+                DownloadingImmAssetId = assetId;
+                yield return DownloadImmCoroutine(assetId, readyPath => path = readyPath);
+                if (path == null) yield break;
+                yield return NativeImmReference.CreateModelCoroutine(assetId, path, model =>
+                {
+                    m_ModelsByKey.TryGetValue(key, out var displaced);
+                    m_ModelsByKey[key] = model;
+                    if (displaced != null && !ReferenceEquals(displaced, model))
+                        displaced.ReleaseFromCatalog();
+                    m_NotifyListeners = true;
+                    onReady?.Invoke(model);
+                });
+            }
+            finally { LoadingImmAssetId = null; }
+        }
+
+        public string DownloadingImmAssetId { get; private set; }
+
+        public string GetImmCacheDirectoryForAsset(string assetId)
+        {
+            if (string.IsNullOrEmpty(assetId) || !sm_AssetIdPattern.IsMatch(assetId))
+                throw new ArgumentException("Invalid Icosa asset ID", nameof(assetId));
+            // Keep native documents separate from model cache validation and eviction.
+            return Path.Combine(Application.persistentDataPath, "immAssetCache", assetId);
+        }
+
+        public string GetCachedImmPath(string assetId)
+        {
+            string directory = GetImmCacheDirectoryForAsset(assetId);
+            if (!Directory.Exists(directory)) return null;
+            var files = Directory.GetFiles(directory, "*.imm", SearchOption.AllDirectories);
+            return files.Length == 1 && new FileInfo(files[0]).Length > 0 ? files[0] : null;
+        }
+
+        public bool RequestImmDownload(string assetId, Action<string> onReady)
+        {
+            if (!string.IsNullOrEmpty(DownloadingImmAssetId)) return false;
+            GetImmCacheDirectoryForAsset(assetId); // Validate before starting the coroutine.
+            DownloadingImmAssetId = assetId;
+            StartCoroutine(DownloadImmCoroutine(assetId, onReady));
+            return true;
+        }
+
+        private IEnumerator<Null> DownloadImmCoroutine(string assetId, Action<string> onReady)
+        {
+            const string prefix = "[OB_ICOSA_IMM_20261015]";
+            try
+            {
+                string path = null;
+                Exception error = null;
+                try { path = GetCachedImmPath(assetId); }
+                catch (Exception exception) { error = exception; }
+                if (error != null)
+                {
+                    OutputWindowScript.Error(NativeImmStrings.Get("READ_CACHE_FAILED", "Could not read cached IMM"), error.Message);
+                    yield break;
+                }
+                if (path == null)
+                {
+                    var request = VrAssetService.m_Instance.GetAsset(assetId,
+                        new[] { VrAssetFormat.IMM }, "IMM reference");
+                    using (var download = request.GetAssetCoroutine())
+                    {
+                        while (true)
+                        {
+                            bool next = false;
+                            try { next = download.MoveNext(); }
+                            catch (Exception exception) { error = exception; }
+                            if (error != null || !next) break;
+                            yield return download.Current;
+                        }
+                    }
+                    if (error != null || request.IsCanceled || !request.IsReady)
+                    {
+                        Debug.LogWarning($"{prefix} Download failed: {assetId}, {error?.Message}");
+                        OutputWindowScript.Error(NativeImmStrings.Get("DOWNLOAD_FAILED", "Could not download IMM"), error?.Message ?? assetId);
+                        yield break;
+                    }
+                    try
+                    {
+                        string directory = GetImmCacheDirectoryForAsset(assetId);
+                        Directory.CreateDirectory(directory);
+                        if (!request.Asset.WriteToDisk(directory))
+                            throw new IOException("Could not write IMM download to cache");
+                        path = GetCachedImmPath(assetId);
+                        if (path == null) throw new IOException("IMM download has no valid root file");
+                    }
+                    catch (Exception exception) { error = exception; }
+                    if (error != null)
+                    {
+                        OutputWindowScript.Error(NativeImmStrings.Get("CACHE_FAILED", "Could not cache IMM"), error.Message);
+                        yield break;
+                    }
+                }
+                Debug.Log($"{prefix} IMM ready: {assetId}, {path}");
+                onReady?.Invoke(path);
+            }
+            finally { DownloadingImmAssetId = null; }
+        }
+
+        public string GetCacheDirectoryForAsset(string asset, VrAssetFormat format = VrAssetFormat.Unknown)
         {
             if (!sm_AssetIdPattern.IsMatch(asset))
             {
                 Debug.LogWarningFormat("Not an asset id: {0}", asset);
                 return null;
             }
-            return Path.Combine(GetVersionedCacheDirectory(), asset);
+            if (format == VrAssetFormat.IMM) return GetImmCacheDirectoryForAsset(asset);
+            string directory = Path.Combine(GetVersionedCacheDirectory(), asset);
+            return format == VrAssetFormat.Unknown ? directory : Path.Combine(directory, format.ToString());
         }
 
         private string GetVersionedCacheDirectory()
@@ -886,21 +1095,25 @@ namespace TiltBrush
             OAuth2Identity.ProfileUpdated += OnProfileUpdated;
         }
 
-        public Model GetModel(string assetId)
+        public Model GetModel(string assetId, VrAssetFormat format = VrAssetFormat.Unknown)
         {
+            var key = ResolveModelKey(assetId, format);
             Model model;
-            if (!m_ModelsByAssetId.TryGetValue(assetId, out model))
+            if (!m_ModelsByKey.TryGetValue(key, out model))
             {
                 // null is actually the default for reference types, just being explicit here.
                 // ReSharper disable once RedundantAssignment
                 model = null;
             }
+            // A loaded native template still needs its source for additional instances.
+            if (model != null && model.IsNativeImmModel && !File.Exists(model.GetLocation().AbsolutePath))
+                return null;
             return model;
         }
 
-        public bool HasCachedModel(string assetId)
+        public bool HasCachedModel(string assetId, VrAssetFormat format = VrAssetFormat.Unknown)
         {
-            return m_ModelsByAssetId.ContainsKey(assetId);
+            return GetModel(assetId, format) != null;
         }
 
         public bool CanAutoDownloadForPreview(string assetId)
@@ -954,29 +1167,29 @@ namespace TiltBrush
             m_thumbnailFetchLimiter.Tick(Time.deltaTime);
 
             // Check for models that have finished loading asynchronously
-            var finishedModels = new List<string>();
-            foreach (var assetId in m_ModelsBeingLoaded)
+            var finishedModels = new List<ModelCacheKey>();
+            foreach (var key in m_ModelsBeingLoaded)
             {
-                if (m_ModelsByAssetId.TryGetValue(assetId, out Model model))
+                if (m_ModelsByKey.TryGetValue(key, out Model model))
                 {
                     if (model.m_Valid || model.Error != null)
                     {
-                        finishedModels.Add(assetId);
+                        finishedModels.Add(key);
                     }
                 }
             }
-            foreach (var assetId in finishedModels)
+            foreach (var key in finishedModels)
             {
-                m_ModelsBeingLoaded.Remove(assetId);
+                m_ModelsBeingLoaded.Remove(key);
                 // Record cache size/recency for models that loaded successfully.
-                if (m_ModelsByAssetId.TryGetValue(assetId, out Model finished) && finished.m_Valid)
+                if (m_ModelsByKey.TryGetValue(key, out Model finished) && finished.m_Valid)
                 {
                     long modelBytes = EstimateModelBytes(finished);
-                    m_LoadedModelBytes[assetId] = modelBytes;
-                    m_ModelLastUsedTime[assetId] = Time.realtimeSinceStartup;
+                    m_LoadedModelBytes[key] = modelBytes;
+                    m_ModelLastUsedTime[key] = Time.realtimeSinceStartup;
                     if (modelBytes > kOversizedModelByteThreshold)
                     {
-                        m_OversizedModelIds.Add(assetId);
+                        m_OversizedModelIds.Add(key);
                     }
                 }
             }
@@ -1035,17 +1248,17 @@ namespace TiltBrush
         /// Pass the reason the Model is being pulled into memory, for logging purposes.
         public void RequestModelLoad(Model model, string reason)
         {
-            // Verify assumption that byAssetId[model.asset] == model; otherwise, caller may wait
+            // Verify the requested representation is the catalog's instance; otherwise, callers may wait
             // indefinitely for model's loaded state to change and that bug will be hard to track down.
             string assetId = model.GetLocation().AssetId;
-            m_ModelsByAssetId.TryGetValue(assetId, out Model model2);
+            m_ModelsByKey.TryGetValue(GetModelKey(model), out Model model2);
             if (model2 != model)
             {
                 // If we pretend to try to load the model, the caller may wait infinitely for the Model
                 // to load.
                 throw new InvalidOperationException($"Duplicate {assetId}");
             }
-            RequestModelLoad(assetId, reason);
+            RequestModelLoad(assetId, reason, GetModelKey(model).Format);
         }
 
         /// Request loading a model with a given Poly Asset ID.
@@ -1059,25 +1272,33 @@ namespace TiltBrush
         /// The intent is that this method will ignore previous failures and try again.
         /// If you don't want to retry a failed load-into-memory, you should check Model.Error first.
         /// If you aren't trying to do a hot-reload, you should check Model.m_Valid first.
-        public void RequestModelLoad(string assetId, string reason)
+        public void RequestModelLoad(string assetId, string reason, VrAssetFormat format = VrAssetFormat.Unknown)
         {
+            var key = ResolveModelKey(assetId, format);
             // Don't attempt to load models which are already loading.
-            if (IsLoading(assetId))
+            if (IsLoading(assetId, format))
             {
                 return;
             }
 
-            if (m_ModelsByAssetId.ContainsKey(assetId))
+            if (m_ModelsByKey.TryGetValue(key, out var existing) && existing.IsNativeImmModel &&
+                !File.Exists(existing.GetLocation().AbsolutePath))
+            {
+                m_ModelsByKey.Remove(key);
+                existing.ReleaseFromCatalog();
+            }
+
+            if (m_ModelsByKey.ContainsKey(key))
             {
                 // Already downloaded.
                 // Only add to queue if the model isn't valid yet, to avoid duplicate requests
                 // when RefreshPage() is called multiple times by CatalogChanged events
-                Model model = m_ModelsByAssetId[assetId];
+                Model model = m_ModelsByKey[key];
 
                 if (model.m_Valid)
                 {
                     // Already cached in memory; mark it recently used so it survives LRU eviction.
-                    MarkModelUsed(assetId);
+                    MarkModelUsed(assetId, key.Format);
                     return;
                 }
                 if (model.Error != null)
@@ -1088,14 +1309,14 @@ namespace TiltBrush
                 // It may be in memory already, but it's safe to ask for it to be brought in again.
                 // That way we get the behavior of "ignore a failed load-into-memory"
                 m_RequestLoadQueue.Add(new ModelLoadRequest(model, reason));
-                m_IsLoadingMemo?.Add(assetId);
+                m_IsLoadingMemo?.Add(key);
             }
             else
             {
                 // Not downloaded yet. Queue it; PumpDownloadQueue (in UpdateCatalog) starts the actual
                 // download once a slot is free, so we don't burst the asset host all at once.
-                m_PendingDownloads.Add((assetId, reason));
-                m_IsLoadingMemo?.Add(assetId);
+                m_PendingDownloads.Add((key, reason));
+                m_IsLoadingMemo?.Add(key);
             }
         }
 
@@ -1105,17 +1326,18 @@ namespace TiltBrush
         {
             while (m_ActiveRequests.Count < kMaxConcurrentDownloads && m_PendingDownloads.Count > 0)
             {
-                var (assetId, reason) = m_PendingDownloads[0];
+                var (key, reason) = m_PendingDownloads[0];
+                key = ResolveModelKey(key.AssetId, key.Format);
                 m_PendingDownloads.RemoveAt(0);
 
                 // It may have been downloaded (or its request canceled) while waiting in the queue.
-                if (m_ModelsByAssetId.ContainsKey(assetId))
+                if (m_ModelsByKey.ContainsKey(key))
                 {
                     m_IsLoadingMemo = null;
                     continue;
                 }
 
-                string assetDir = GetCacheDirectoryForAsset(assetId);
+                string assetDir = GetCacheDirectoryForAsset(key.AssetId, key.Format);
                 try
                 {
                     // For the case that the folder exists, but the files were removed.
@@ -1130,7 +1352,7 @@ namespace TiltBrush
                 }
 
                 AssetGetter request = VrAssetService.m_Instance.GetAsset(
-                    assetId, GetSupportedIcosaFormats(), reason);
+                    key.AssetId, key.Format == VrAssetFormat.Unknown ? GetSupportedIcosaFormats() : new[] { key.Format }, reason);
                 StartCoroutine(request.GetAssetCoroutine());
                 m_ActiveRequests.Add(request);
                 m_IsLoadingMemo = null;
@@ -1140,12 +1362,13 @@ namespace TiltBrush
         /// The inverse of RequestModelLoad().
         /// Returns true if the model is no longer in any load queues.
         /// The current implementation is only a half-hearted effort, so it may return false.
-        public bool CancelRequestModelLoad(string assetId)
+        public bool CancelRequestModelLoad(string assetId, VrAssetFormat format = VrAssetFormat.Unknown)
         {
-            if (IsLoading(assetId))
+            var key = ResolveModelKey(assetId, format);
+            if (IsLoading(assetId, format))
             {
                 // Drop it from the pending-download queue if it hasn't started yet.
-                if (m_PendingDownloads.RemoveAll(d => d.assetId == assetId) > 0)
+                if (m_PendingDownloads.RemoveAll(d => ResolveModelKey(d.key.AssetId, d.key.Format) == key) > 0)
                 {
                     m_IsLoadingMemo = null;
                 }
@@ -1155,7 +1378,7 @@ namespace TiltBrush
                 bool isInActiveRequests = false;
                 foreach (var elt in m_ActiveRequests)
                 {
-                    if (elt.Asset.Id == assetId)
+                    if (GetRequestKey(elt) == key)
                     {
                         elt.IsCanceled = true;
                         isInActiveRequests = true;
@@ -1163,14 +1386,14 @@ namespace TiltBrush
                 }
 
                 // Removing from RequestLoadQueue is easy; there's no computation associated with it (yet)
-                m_RequestLoadQueue.RemoveAll(elt => elt.AssetId == assetId);
+                m_RequestLoadQueue.RemoveAll(elt => elt.Key == key);
                 bool isInRequestLoadQueue = false;
 
                 {
                     bool wasInLoadQueue = false;
                     foreach (var elt in m_LoadQueue)
                     {
-                        if (elt.AssetId == assetId)
+                        if (elt.Key == key)
                         {
                             elt.Model.CancelLoadModelAsync();
                             wasInLoadQueue = true;
@@ -1178,7 +1401,7 @@ namespace TiltBrush
                     }
                     if (wasInLoadQueue)
                     {
-                        m_LoadQueue = m_LoadQueue.Where(elt => elt.AssetId != assetId).ToList();
+                        m_LoadQueue = m_LoadQueue.Where(elt => elt.Key != key).ToList();
                     }
                 }
                 bool isInLoadQueue = false;
@@ -1187,11 +1410,11 @@ namespace TiltBrush
                 // and we have enough information to mutate it properly.
                 if (!isInActiveRequests && !isInRequestLoadQueue && !isInLoadQueue)
                 {
-                    m_IsLoadingMemo?.Remove(assetId);
+                    m_IsLoadingMemo?.Remove(key);
                 }
             }
 
-            return !IsLoading(assetId);
+            return !IsLoading(assetId, format);
         }
 
         /// Downloads models referenced by the passed sketch.
@@ -1228,7 +1451,7 @@ namespace TiltBrush
             // Only trigger off one precache routine per frame.
             foreach (string id in ids)
             {
-                if (m_ModelsByAssetId.ContainsKey(id))
+                if (HasCachedModel(id))
                 {
                     // Already cached
                     continue;
@@ -1309,10 +1532,36 @@ namespace TiltBrush
                 }
                 yield return cr.Current;
             }
-            while (!request.IsReady) { yield return null; }
-            request.Asset.WriteToDisk();
-            string path = Path.Combine(GetCacheDirectoryForAsset(assetId), request.Asset.RootFilePath);
-            m_ModelsByAssetId[assetId] = new Model(assetId, path);
+            if (request.IsCanceled || !request.IsReady) yield break;
+            CacheDownloadedAsset(request.Asset);
+        }
+
+        private Model CacheDownloadedAsset(IcosaRawAsset asset)
+        {
+            try
+            {
+                var format = asset.SelectedFormat;
+                var key = new ModelCacheKey(asset.Id, format);
+                // A precache and an interactive request can finish for the same representation.
+                // Preserve the instance already held by widgets and pending loads.
+                if (asset.DesiredTypes.Length > 1 && format != VrAssetFormat.IMM)
+                    m_DefaultModelFormats[asset.Id] = format;
+                m_IsLoadingMemo = null;
+                if (m_ModelsByKey.TryGetValue(key, out var existing)) return existing;
+                string directory = GetCacheDirectoryForAsset(asset.Id, format);
+                Directory.CreateDirectory(directory);
+                if (!asset.WriteToDisk(directory)) return null;
+                if (format != VrAssetFormat.Unknown)
+                    File.WriteAllText(Path.Combine(directory, kModelCacheFormatMarker), format.ToString());
+                var model = new Model(asset.Id, Path.Combine(directory, asset.RootFilePath), galleryFormat: format);
+                m_ModelsByKey[key] = model;
+                return model;
+            }
+            catch (Exception error) when (error is IOException || error is UnauthorizedAccessException)
+            {
+                OutputWindowScript.Error(NativeImmStrings.Get("CACHE_GALLERY_FAILED", "Could not cache gallery reference"), $"{asset.Id}: {error.Message}");
+                return null;
+            }
         }
 
         public void UpdateCatalog()
@@ -1325,17 +1574,9 @@ namespace TiltBrush
                 {
                     if (request.Asset.ValidAsset)
                     {
-                        if (request.Asset.WriteToDisk())
+                        if (CacheDownloadedAsset(request.Asset) is Model downloaded)
                         {
                             string assetId = request.Asset.Id;
-                            string path =
-                                Path.Combine(GetCacheDirectoryForAsset(assetId), request.Asset.RootFilePath);
-                            // TODO: This assumes PolyRawAssets are models.  This may not be true in the
-                            // future and should the VrAssetProtos.ElementType request parameter to
-                            // VrAssetService.m_Instance.GetAsset to decide how to store and index the asset.
-
-                            // Populate map entry for this new model.
-                            m_ModelsByAssetId[assetId] = new Model(assetId, path);
 
                             // After download the model should be loaded too, unless the request was canceled.
                             // TODO: this seems a littttle suspect. Just because it finished downloading,
@@ -1344,7 +1585,7 @@ namespace TiltBrush
                             {
                                 m_RequestLoadQueue.Add(
                                     new ModelLoadRequest(
-                                        m_ModelsByAssetId[assetId], $"{request.Reason} fetched"));
+                                        downloaded, $"{request.Reason} fetched"));
                             }
                             else
                             {
@@ -1355,10 +1596,14 @@ namespace TiltBrush
                     }
                     else
                     {
-                        Debug.LogWarning("Downloaded asset is empty " + request.Asset.RootFilePath);
+                        Debug.LogWarning($"Downloaded asset is empty: {request.Asset.Id}");
+                        if (!string.IsNullOrEmpty(request.ErrorMessage))
+                            OutputWindowScript.Error(NativeImmStrings.Get("LOAD_GALLERY_FAILED", "Could not load gallery reference"),
+                                $"{request.Asset.Id}: {request.ErrorMessage}");
                     }
 
                     m_ActiveRequests.RemoveAt(i);
+                    m_IsLoadingMemo = null;
                     m_NotifyListeners = true;
                 }
             }
@@ -1373,7 +1618,7 @@ namespace TiltBrush
                 var toMove = m_RequestLoadQueue[0];
                 // TODO: how is it possible for m_RequestLoadQueue to contain duplicates?
                 m_RequestLoadQueue = m_RequestLoadQueue
-                    .Where(elt => elt.AssetId != toMove.AssetId)
+                    .Where(elt => elt.Key != toMove.Key)
                     .ToList();
                 m_LoadQueue.Add(toMove);
             }
@@ -1408,9 +1653,9 @@ namespace TiltBrush
                 Model model = request.Model;
                 if (!model.m_Valid && model.Error == null)
                 {
-                    string assetId = model.GetLocation().AssetId;
-                    m_ModelsBeingLoaded.Add(assetId);
-                    LoadModelAsyncSafe(model, assetId);
+                    var key = GetModelKey(model);
+                    m_ModelsBeingLoaded.Add(key);
+                    LoadModelAsyncSafe(model, key);
                 }
             }
             UnityEngine.Profiling.Profiler.EndSample();
@@ -1420,7 +1665,7 @@ namespace TiltBrush
         /// observed in Update() via m_Valid/Error. This wrapper exists only to guard against an
         /// unexpected exception leaving the asset stuck in m_ModelsBeingLoaded, which would stall
         /// the single-at-a-time load queue indefinitely.
-        private async void LoadModelAsyncSafe(Model model, string assetId)
+        private async void LoadModelAsyncSafe(Model model, ModelCacheKey key)
         {
             try
             {
@@ -1429,7 +1674,7 @@ namespace TiltBrush
             catch (Exception e)
             {
                 Debug.LogException(e);
-                m_ModelsBeingLoaded.Remove(assetId);
+                m_ModelsBeingLoaded.Remove(key);
                 m_IsLoadingMemo = null;
                 m_NotifyListeners = true;
             }
@@ -1556,6 +1801,9 @@ namespace TiltBrush
         void OnDestroy()
         {
             OAuth2Identity.ProfileUpdated -= OnProfileUpdated;
+            if (m_ModelsByKey != null)
+                foreach (var model in m_ModelsByKey.Values)
+                    if (model.IsNativeImmModel) model.ReleaseFromCatalog();
         }
 
         public int NumCloudModels(IcosaSetType type)
@@ -1569,10 +1817,27 @@ namespace TiltBrush
             return m_AssetSetByType[type].m_Models[index];
         }
 
-        // Ideally we would check against the format info from Poly that we have all the required
-        // elements but for now we know there should be one root model file in a supported format.
-        // Returns the path of the root model file relative to dir, or null if not valid.
-        private static string ValidModelCache(string dir)
+        private bool RegisterCachedModel(string assetId, string directory,
+            VrAssetFormat format = VrAssetFormat.Unknown, string[] excludedDirectories = null)
+        {
+            // Only our marked format folders are excluded; legacy sources may have any folder name.
+            string modelFile = excludedDirectories != null
+                ? FindModelCacheRoot(directory, Directory.GetFiles(directory, "*", SearchOption.AllDirectories)
+                    .Where(file => !excludedDirectories.Any(excluded =>
+                        file.StartsWith($"{excluded}{Path.DirectorySeparatorChar}", StringComparison.Ordinal))))
+                : ValidModelCache(directory);
+            if (modelFile == null) return false;
+            var model = new Model(assetId, Path.Combine(directory, modelFile), galleryFormat: format);
+            var key = GetModelKey(model);
+            if (!m_ModelsByKey.ContainsKey(key)) m_ModelsByKey[key] = model;
+            return true;
+        }
+
+        // Returns the single supported root model path relative to dir, or null if invalid.
+        private static string ValidModelCache(string dir) =>
+            FindModelCacheRoot(dir, Directory.GetFiles(dir, "*", SearchOption.AllDirectories));
+
+        private static string FindModelCacheRoot(string dir, IEnumerable<string> allFiles)
         {
             // We now don't require a .bin file, as some assets are glbs
             // if (Directory.GetFiles(dir, "*.bin").Length == 0)
@@ -1590,7 +1855,6 @@ namespace TiltBrush
                 ".ply"
             };
 
-            var allFiles = Directory.GetFiles(dir, "*", SearchOption.AllDirectories);
             var modelFiles = allFiles.Where(file =>
                 preferredExtensions.Contains(Path.GetExtension(file).ToLowerInvariant())).ToArray();
 
@@ -1618,7 +1882,7 @@ namespace TiltBrush
 
         public void UnloadUnusedModels()
         {
-            foreach (var model in m_ModelsByAssetId.Values.Where(x => x != null && x.m_UsageCount == 0))
+            foreach (var model in m_ModelsByKey.Values.Where(x => x != null && x.m_UsageCount == 0))
             {
                 model.UnloadModel();
             }
@@ -1627,17 +1891,18 @@ namespace TiltBrush
 
         /// True if this model was measured (on a previous load this session) to be too large to be
         /// worth auto-preloading/previewing.
-        public bool IsModelOversized(string assetId)
+        public bool IsModelOversized(string assetId, VrAssetFormat format = VrAssetFormat.Unknown)
         {
-            return m_OversizedModelIds.Contains(assetId);
+            return m_OversizedModelIds.Contains(ResolveModelKey(assetId, format));
         }
 
         /// Marks a loaded model as recently used so it survives LRU eviction.
-        public void MarkModelUsed(string assetId)
+        public void MarkModelUsed(string assetId, VrAssetFormat format = VrAssetFormat.Unknown)
         {
-            if (m_ModelLastUsedTime.ContainsKey(assetId))
+            var key = ResolveModelKey(assetId, format);
+            if (m_ModelLastUsedTime.ContainsKey(key))
             {
-                m_ModelLastUsedTime[assetId] = Time.realtimeSinceStartup;
+                m_ModelLastUsedTime[key] = Time.realtimeSinceStartup;
             }
         }
 
@@ -1656,7 +1921,7 @@ namespace TiltBrush
         private void PruneModelCacheBookkeeping()
         {
             var stale = m_LoadedModelBytes.Keys
-                .Where(id => !m_ModelsByAssetId.TryGetValue(id, out var m) || m == null || !m.m_Valid)
+                .Where(id => !m_ModelsByKey.TryGetValue(id, out var m) || m == null || !m.m_Valid)
                 .ToList();
             foreach (var id in stale)
             {
@@ -1722,8 +1987,8 @@ namespace TiltBrush
             // frees space with a single eviction, keeping the many small/quick models cached. (Pure
             // LRU would flush all the cheap models before the one expensive one - the worst outcome.)
             var evictable = m_LoadedModelBytes.Keys
-                .Where(id => !m_VisibleAssetIds.Contains(id)
-                    && m_ModelsByAssetId.TryGetValue(id, out var m)
+                .Where(id => !m_VisibleAssetIds.Contains(id.AssetId)
+                    && m_ModelsByKey.TryGetValue(id, out var m)
                     && m != null && m.m_Valid && m.m_UsageCount == 0)
                 .OrderByDescending(id => m_LoadedModelBytes.TryGetValue(id, out var b) ? b : 0L)
                 .ToList();
@@ -1733,7 +1998,7 @@ namespace TiltBrush
             {
                 if (total <= kLoadedModelMemoryBudgetBytes) { break; }
                 long freed = m_LoadedModelBytes.TryGetValue(id, out var b) ? b : 0;
-                m_ModelsByAssetId[id].UnloadModel();
+                m_ModelsByKey[id].UnloadModel();
                 m_LoadedModelBytes.Remove(id);
                 m_ModelLastUsedTime.Remove(id);
                 total -= freed;
@@ -1846,6 +2111,7 @@ namespace TiltBrush
         {
             m_AssetJsonByAssetId ??= new Dictionary<string, JObject>();
             m_AssetJsonByAssetId[toString] = asset;
+            m_IsLoadingMemo = null;
         }
     }
 } // namespace TiltBrush

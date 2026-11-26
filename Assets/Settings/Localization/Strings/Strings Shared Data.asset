@@ -3847,6 +3847,58 @@ MonoBehaviour:
     m_Key: CAPTURE_TRAY_EXPORT_BUTTON_DESCRIPTION_EXTRA
     m_Metadata:
       m_Items: []
+  - m_Id: 554342843705548800
+    m_Key: HANDTRACKING_ROTATE_PANELS_LEFT_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 554342843789434880
+    m_Key: HANDTRACKING_ROTATE_PANELS_RIGHT_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 554342843789434881
+    m_Key: ICOSAPANEL_PANEL_FILTER_COMPLEXITY
+    m_Metadata:
+      m_Items: []
+  - m_Id: 559927936423649280
+    m_Key: LABS_PANEL_VOXEL_TRAY_NEW_MODEL
+    m_Metadata:
+      m_Items: []
+  - m_Id: 559927936520118272
+    m_Key: LABS_PANEL_VOXEL_TRAY_NEW_MODEL_EXTRA
+    m_Metadata:
+      m_Items: []
+  - m_Id: 559927936520118273
+    m_Key: LABS_PANEL_VOXEL_TRAY_ALIGN_TO_GRID
+    m_Metadata:
+      m_Items: []
+  - m_Id: 559927936524312576
+    m_Key: LABS_PANEL_VOXEL_TRAY_ALIGN_TO_GRID_EXTRA
+    m_Metadata:
+      m_Items: []
+  - m_Id: 560634138304536576
+    m_Key: LABS_PANEL_VOXEL_TRAY_SELECT_REGION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 560634138455531520
+    m_Key: LABS_PANEL_VOXEL_TRAY_SELECT_REGION_EXTRA
+    m_Metadata:
+      m_Items: []
+  - m_Id: 561984249517400064
+    m_Key: VOX_PALETTE_APPLY_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 561984250834411520
+    m_Key: VOX_PALETTE_CLEAR_UNUSED_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 561984250838605824
+    m_Key: VOX_PALETTE_SORT_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563423505335017472
+    m_Key: VOX_PALETTE_USE_BRUSH_COLOR
+    m_Metadata:
+      m_Items: []
   - m_Id: 551461337584721920
     m_Key: MULTIMIRROR_PANEL_HELICAL_SYMMETRY
     m_Metadata:
@@ -3941,18 +3993,6 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 553297782469386240
     m_Key: UI_LONG_PRESS_MORE_OPTIONS_HINT
-    m_Metadata:
-      m_Items: []
-  - m_Id: 554342843705548800
-    m_Key: HANDTRACKING_ROTATE_PANELS_LEFT_DESCRIPTION
-    m_Metadata:
-      m_Items: []
-  - m_Id: 554342843789434880
-    m_Key: HANDTRACKING_ROTATE_PANELS_RIGHT_DESCRIPTION
-    m_Metadata:
-      m_Items: []
-  - m_Id: 554342843789434881
-    m_Key: ICOSAPANEL_PANEL_FILTER_COMPLEXITY
     m_Metadata:
       m_Items: []
   - m_Id: 563821227493908486
@@ -4163,44 +4203,152 @@ MonoBehaviour:
     m_Key: MULTIMIRROR_PANEL_SIMPLE_HELP_BODY
     m_Metadata:
       m_Items: []
-  - m_Id: 559927936423649280
-    m_Key: LABS_PANEL_VOXEL_TRAY_NEW_MODEL
+  - m_Id: 82311120000000001
+    m_Key: NATIVE_IMM_PREVIOUS_CHAPTER
     m_Metadata:
       m_Items: []
-  - m_Id: 559927936520118272
-    m_Key: LABS_PANEL_VOXEL_TRAY_NEW_MODEL_EXTRA
+  - m_Id: 82311120000000002
+    m_Key: NATIVE_IMM_NEXT_CHAPTER
     m_Metadata:
       m_Items: []
-  - m_Id: 559927936520118273
-    m_Key: LABS_PANEL_VOXEL_TRAY_ALIGN_TO_GRID
+  - m_Id: 82311120000000003
+    m_Key: NATIVE_IMM_PREVIOUS_VIEWPOINT
     m_Metadata:
       m_Items: []
-  - m_Id: 559927936524312576
-    m_Key: LABS_PANEL_VOXEL_TRAY_ALIGN_TO_GRID_EXTRA
+  - m_Id: 82311120000000004
+    m_Key: NATIVE_IMM_NEXT_VIEWPOINT
     m_Metadata:
       m_Items: []
-  - m_Id: 560634138304536576
-    m_Key: LABS_PANEL_VOXEL_TRAY_SELECT_REGION
+  - m_Id: 82311120000000005
+    m_Key: NATIVE_IMM_SELECT_PREVIOUS_VIEWPOINT
     m_Metadata:
       m_Items: []
-  - m_Id: 560634138455531520
-    m_Key: LABS_PANEL_VOXEL_TRAY_SELECT_REGION_EXTRA
+  - m_Id: 82311120000000006
+    m_Key: NATIVE_IMM_SELECT_NEXT_VIEWPOINT
     m_Metadata:
       m_Items: []
-  - m_Id: 561984249517400064
-    m_Key: VOX_PALETTE_APPLY_DESCRIPTION
+  - m_Id: 82311120000000007
+    m_Key: NATIVE_IMM_MOVE_TO_VIEWPOINT
     m_Metadata:
       m_Items: []
-  - m_Id: 561984250834411520
-    m_Key: VOX_PALETTE_CLEAR_UNUSED_DESCRIPTION
+  - m_Id: 82311120000000008
+    m_Key: NATIVE_IMM_PLAY
     m_Metadata:
       m_Items: []
-  - m_Id: 561984250838605824
-    m_Key: VOX_PALETTE_SORT_DESCRIPTION
+  - m_Id: 82311120000000009
+    m_Key: NATIVE_IMM_PAUSE
     m_Metadata:
       m_Items: []
-  - m_Id: 563423505335017472
-    m_Key: VOX_PALETTE_USE_BRUSH_COLOR
+  - m_Id: 82311120000000010
+    m_Key: NATIVE_IMM_CHAPTER
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000011
+    m_Key: NATIVE_IMM_VIEWPOINT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000012
+    m_Key: NATIVE_IMM_LOADING
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000013
+    m_Key: NATIVE_IMM_CHANGING_CHAPTER
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000014
+    m_Key: NATIVE_IMM_QUILL_UNAVAILABLE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000015
+    m_Key: NATIVE_IMM_LOOP
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000016
+    m_Key: NATIVE_IMM_SPATIAL
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000017
+    m_Key: NATIVE_IMM_MAKE_EDITABLE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000018
+    m_Key: NATIVE_IMM_CONVERT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000019
+    m_Key: NATIVE_IMM_CONVERT_HINT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000020
+    m_Key: NATIVE_IMM_IMPORT_SKYDOME
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000021
+    m_Key: NATIVE_IMM_IMPORT_IMM_SKYDOME
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000022
+    m_Key: NATIVE_IMM_SKYDOME_HINT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000023
+    m_Key: NATIVE_IMM_CONVERT_FAILED
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000024
+    m_Key: NATIVE_IMM_NO_SKYDOME
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000025
+    m_Key: NATIVE_IMM_SKYDOME_FAILED
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000026
+    m_Key: NATIVE_IMM_PLAYBACK_FAILED
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000027
+    m_Key: NATIVE_IMM_LOAD_INCOMPLETE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000028
+    m_Key: NATIVE_IMM_UNLOAD_INCOMPLETE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000029
+    m_Key: NATIVE_IMM_LOAD_REFERENCE_FAILED
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000030
+    m_Key: NATIVE_IMM_READ_CACHE_FAILED
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000031
+    m_Key: NATIVE_IMM_DOWNLOAD_FAILED
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000032
+    m_Key: NATIVE_IMM_CACHE_FAILED
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000033
+    m_Key: NATIVE_IMM_CACHE_GALLERY_FAILED
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000034
+    m_Key: NATIVE_IMM_LOAD_GALLERY_FAILED
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000035
+    m_Key: NATIVE_IMM_LOAD_TIMEOUT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000036
+    m_Key: NATIVE_IMM_VIDEO_FAILED
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000037
+    m_Key: NATIVE_IMM_SOUND_FAILED
     m_Metadata:
       m_Items: []
   - m_Id: 564570892417982464
