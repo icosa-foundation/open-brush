@@ -45,6 +45,10 @@ namespace TiltBrush
                 throw new InvalidOperationException("The model-guide prefab is unavailable.");
             }
 
+            Guides.ModelGuideState geometry = source.EditableVoxDocument != null
+                ? ModelStencil.CaptureVoxGeometry(source)
+                : null;
+
             CanvasScript targetCanvas = source.Canvas == App.Scene.SelectionCanvas
                 ? source.m_PreviousCanvas
                 : source.Canvas;
@@ -61,7 +65,7 @@ namespace TiltBrush
                 parent: this,
                 canvas: targetCanvas);
             new ConfigureModelGuideCommand(
-                m_CreateCommand, source.Model, source.Subtree, source.Group, source.Pinned,
+                m_CreateCommand, source.Model, source.Subtree, geometry, source.Group, source.Pinned,
                 (targetCanvas.Pose.inverse * pose).scale, this);
             new SelectModelGuideCommand(m_CreateCommand, source, targetCanvas, pose, this);
         }
@@ -77,17 +81,20 @@ namespace TiltBrush
             private readonly CreateWidgetCommand m_CreateCommand;
             private readonly Model m_Model;
             private readonly string m_Subtree;
+            private readonly Guides.ModelGuideState m_Geometry;
             private readonly SketchGroupTag m_Group;
             private readonly bool m_Pinned;
             private readonly float m_Size;
 
             internal ConfigureModelGuideCommand(
-                CreateWidgetCommand createCommand, Model model, string subtree, SketchGroupTag group,
-                bool pinned, float size, BaseCommand parent) : base(parent)
+                CreateWidgetCommand createCommand, Model model, string subtree,
+                Guides.ModelGuideState geometry, SketchGroupTag group, bool pinned, float size,
+                BaseCommand parent) : base(parent)
             {
                 m_CreateCommand = createCommand;
                 m_Model = model;
                 m_Subtree = subtree;
+                m_Geometry = geometry;
                 m_Group = group;
                 m_Pinned = pinned;
                 m_Size = size;
@@ -103,8 +110,15 @@ namespace TiltBrush
 
                 // Intro animation preserves widget size rather than applying the spawn scale.
                 stencil.SetSignedWidgetSize(m_Size);
-                stencil.Subtree = m_Subtree;
-                stencil.Model = m_Model;
+                if (m_Geometry != null)
+                {
+                    stencil.InitializeFromGeometry(m_Geometry);
+                }
+                else
+                {
+                    stencil.Subtree = m_Subtree;
+                    stencil.Model = m_Model;
+                }
                 stencil.Group = m_Group;
                 if (stencil.Pinned != m_Pinned)
                 {

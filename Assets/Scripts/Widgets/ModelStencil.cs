@@ -180,14 +180,15 @@ namespace TiltBrush
                     }
                 }
             }
-            m_SourceMesh = CombineSourceMeshes();
+            m_SourceMesh = CombineSourceMeshes(transform.worldToLocalMatrix,
+                GetSourceComponents<MeshFilter>(), GetSourceComponents<SkinnedMeshRenderer>());
             InitializeGeometry();
         }
 
-        private void InitializeGeometry()
+        private void InitializeGeometry(Guides.ModelGuideState geometry = null)
         {
-            m_SourceVertices = m_SourceMesh.vertices;
-            m_SourceTriangles = m_SourceMesh.triangles;
+            m_SourceVertices = geometry?.Vertices ?? m_SourceMesh.vertices;
+            m_SourceTriangles = geometry?.Triangles ?? m_SourceMesh.triangles;
             m_TotalTriangleCount = m_SourceTriangles.Length / 3;
             m_TintableMeshes = GetSourceComponents<Renderer>();
             m_HighlightMeshFilters = GetSourceComponents<MeshFilter>();
@@ -507,11 +508,34 @@ namespace TiltBrush
             return m_ModelInstance.GetComponentsInChildren<T>();
         }
 
-        private Mesh CombineSourceMeshes()
+        internal static Guides.ModelGuideState CaptureVoxGeometry(ModelWidget source)
+        {
+            Mesh mesh = CombineSourceMeshes(source.transform.worldToLocalMatrix,
+                source.GetMeshes(), Array.Empty<SkinnedMeshRenderer>());
+            try
+            {
+                var geometry = new Guides.ModelGuideState
+                {
+                    Vertices = mesh.vertices,
+                    Triangles = mesh.triangles
+                };
+                if (geometry.Triangles.Length == 0)
+                {
+                    throw new InvalidOperationException("The selected VOX model has no visible triangles.");
+                }
+                return geometry;
+            }
+            finally
+            {
+                Destroy(mesh);
+            }
+        }
+
+        private static Mesh CombineSourceMeshes(Matrix4x4 toLocal,
+            MeshFilter[] filters, SkinnedMeshRenderer[] skinnedRenderers)
         {
             var combine = new System.Collections.Generic.List<CombineInstance>();
             var bakedMeshes = new System.Collections.Generic.List<Mesh>();
-            Matrix4x4 toLocal = transform.worldToLocalMatrix;
             void AddMesh(Mesh mesh, Transform source)
             {
                 if (mesh == null) { return; }
@@ -524,12 +548,11 @@ namespace TiltBrush
                     });
                 }
             }
-            foreach (MeshFilter filter in GetSourceComponents<MeshFilter>())
+            foreach (MeshFilter filter in filters)
             {
-                AddMesh(filter.sharedMesh, filter.transform);
+                if (filter != null) { AddMesh(filter.sharedMesh, filter.transform); }
             }
-            foreach (SkinnedMeshRenderer renderer in
-                GetSourceComponents<SkinnedMeshRenderer>())
+            foreach (SkinnedMeshRenderer renderer in skinnedRenderers)
             {
                 var baked = new Mesh();
                 renderer.BakeMesh(baked);
@@ -796,7 +819,12 @@ namespace TiltBrush
 
         protected override void ApplySaveState(Guides.State state)
         {
-            Guides.ModelGuideState geometry = state.ModelGuide;
+            InitializeFromGeometry(state.ModelGuide);
+        }
+
+        internal void InitializeFromGeometry(Guides.ModelGuideState geometry)
+        {
+            if (m_ModelLoaded) { return; }
             if (geometry?.Vertices == null || geometry.Triangles == null ||
                 geometry.Vertices.Length == 0 || geometry.Triangles.Length == 0 ||
                 geometry.Triangles.Length % 3 != 0 ||
@@ -813,12 +841,12 @@ namespace TiltBrush
             m_SourceMesh.triangles = geometry.Triangles;
             m_SourceMesh.RecalculateBounds();
             m_SourceMesh.RecalculateNormals();
-            var source = new GameObject("Saved Model Guide Geometry");
+            var source = new GameObject("Model Guide Geometry");
             source.transform.SetParent(transform, false);
             source.AddComponent<MeshFilter>().sharedMesh = m_SourceMesh;
             source.AddComponent<MeshRenderer>().sharedMaterial = m_GuideMaterial;
             m_ModelInstance = source.transform;
-            InitializeGeometry();
+            InitializeGeometry(geometry);
         }
 
         public override GrabWidget Clone()
