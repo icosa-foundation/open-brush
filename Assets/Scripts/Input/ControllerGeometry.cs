@@ -1449,7 +1449,10 @@ namespace TiltBrush
             }
         }
 
-        public void ShowTintMode(bool isOn, Texture2D icon)
+        public void ShowTintMode(bool isOn, Texture2D icon) => ShowModeIcon(isOn, icon);
+
+        // Context mode icons use the same surfaces across the supported controller styles.
+        public void ShowModeIcon(bool isOn, Texture2D icon)
         {
             Material mat = isOn ? Materials.ToggleSelectionOn : Materials.ToggleSelectionOff;
 
@@ -1457,8 +1460,7 @@ namespace TiltBrush
             {
                 case ControllerStyle.Vive:
                 case ControllerStyle.LogitechPen:
-                    Materials.Assign(PadMesh, mat);
-                    if (icon != null) { PadMesh.material.SetTexture("_EmissionMap", icon); }
+                    Materials.AssignModeIcon(PadMesh, mat, icon);
                     break;
                 case ControllerStyle.OculusTouch:
                 case ControllerStyle.Knuckles:
@@ -1466,12 +1468,10 @@ namespace TiltBrush
                     Materials.Assign(JoystickMesh, SelectPadTouched(Materials.Blank, Materials.BrushSizer));
                     float ratio = GetPadRatio(VrInput.Directional);
                     JoystickPad.material.SetFloat("_Ratio", ratio);
-                    Materials.Assign(Button01Mesh, mat);
-                    if (icon != null) { Button01Mesh.material.SetTexture("_EmissionMap", icon); }
+                    Materials.AssignModeIcon(Button01Mesh, mat, icon);
                     break;
                 case ControllerStyle.Wmr:
-                    Materials.Assign(PadMesh, mat);
-                    if (icon != null) { PadMesh.material.SetTexture("_EmissionMap", icon); }
+                    Materials.AssignModeIcon(PadMesh, mat, icon);
                     ShowBrushSizer();
                     break;
             }

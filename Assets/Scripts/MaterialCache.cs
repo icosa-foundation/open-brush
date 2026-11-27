@@ -26,21 +26,24 @@ namespace TiltBrush
     {
         private Renderer m_SiblingRenderer;
         private Dictionary<Material, Material> m_CachedMaterialMap;
+        private Dictionary<Material, Material> m_CachedModeIconMaterialMap;
 
         void Awake()
         {
             m_CachedMaterialMap = new Dictionary<Material, Material>(new ReferenceComparer<Material>());
+            m_CachedModeIconMaterialMap = new Dictionary<Material, Material>(new ReferenceComparer<Material>());
             m_SiblingRenderer = GetComponent<Renderer>();
         }
 
-        public void AssignMaterial(Material mat)
+        public void AssignMaterial(Material mat, bool forModeIcon = false)
         {
 #if ZAPBOX_SUPPORTED
             if (mat != null)
                 return;
 #endif
-            // Get mat from dictionary.
-            if (!m_CachedMaterialMap.ContainsKey(mat))
+            // Keep mode texture overrides separate from the catalog instance used by other tools.
+            var materials = forModeIcon ? m_CachedModeIconMaterialMap : m_CachedMaterialMap;
+            if (!materials.ContainsKey(mat))
             {
                 // If it doesn't, clone and add.
                 m_SiblingRenderer.material = mat;
@@ -55,9 +58,9 @@ namespace TiltBrush
                     Debug.LogError("Generated material used as a key to the MaterialCache dictionary.");
                 }
 #endif
-                m_CachedMaterialMap.Add(mat, m_SiblingRenderer.material);
+                materials.Add(mat, m_SiblingRenderer.material);
             }
-            m_SiblingRenderer.material = m_CachedMaterialMap[mat];
+            m_SiblingRenderer.material = materials[mat];
         }
     }
 
