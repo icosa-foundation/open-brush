@@ -118,8 +118,14 @@ namespace TiltBrush
                 }
             }
 
-            SelectionManager.m_Instance.DeregisterStrokesInSelectionCanvas(m_Strokes);
-            SelectionManager.m_Instance.DeregisterWidgetsInSelectionCanvas(m_Widgets);
+            if (m_Strokes != null)
+            {
+                SelectionManager.m_Instance.DeregisterStrokesInSelectionCanvas(m_Strokes);
+            }
+            if (m_Widgets != null)
+            {
+                SelectionManager.m_Instance.DeregisterWidgetsInSelectionCanvas(m_Widgets);
+            }
         }
 
         protected override void OnUndo()
@@ -159,8 +165,14 @@ namespace TiltBrush
                 }
             }
 
-            SelectionManager.m_Instance.RegisterStrokesInSelectionCanvas(m_Strokes);
-            SelectionManager.m_Instance.RegisterWidgetsInSelectionCanvas(m_Widgets);
+            if (m_Strokes != null)
+            {
+                SelectionManager.m_Instance.RegisterStrokesInSelectionCanvas(m_Strokes);
+            }
+            if (m_Widgets != null)
+            {
+                SelectionManager.m_Instance.RegisterWidgetsInSelectionCanvas(m_Widgets);
+            }
             SelectionManager.m_Instance.RestoreSelectionJoinTransforms(m_StrokeJoins);
             SelectionManager.m_Instance.RestoreWidgetSelectionJoins(m_WidgetJoins, m_WidgetCanvases);
             SketchSurfacePanel.m_Instance.EnableSpecificTool(BaseTool.ToolType.SelectionTool);

@@ -75,6 +75,18 @@ namespace TiltBrush
             m_CommandParam2 = iCommandParam2;
         }
 
+        public void SetContextCommand(
+            SketchControlsScript.GlobalCommands command,
+            Texture2D texture,
+            string description)
+        {
+            m_Command = command;
+            m_DefaultTexture = texture;
+            m_DefaultDescription = description;
+            SetButtonTexture(texture);
+            SetDescriptionText(description);
+        }
+
         override protected void OnDestroy()
         {
             base.OnDestroy();

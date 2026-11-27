@@ -105,6 +105,16 @@ namespace TiltBrush
             WriteEndArray();
         }
 
+        public void WriteValue(Vector4 v)
+        {
+            WriteStartArray(true);
+            for (var i = 0; i < 4; ++i)
+            {
+                WriteValue(v[i]);
+            }
+            WriteEndArray();
+        }
+
         public void WriteValue(Vector2 v)
         {
             WriteStartArray(true);
@@ -154,6 +164,7 @@ namespace TiltBrush
         public override bool CanConvert(Type objectType)
         {
             return (objectType == typeof(Vector3)
+                || objectType == typeof(Vector4)
                 || objectType == typeof(Vector2)
                 || objectType == typeof(Color)
                 || objectType == typeof(Color32)
@@ -181,6 +192,14 @@ namespace TiltBrush
             if (objectType == typeof(Vector3))
             {
                 result = new Vector3(
+                    ReadFloat(reader),
+                    ReadFloat(reader),
+                    ReadFloat(reader));
+            }
+            else if (objectType == typeof(Vector4))
+            {
+                result = new Vector4(
+                    ReadFloat(reader),
                     ReadFloat(reader),
                     ReadFloat(reader),
                     ReadFloat(reader));
@@ -235,6 +254,10 @@ namespace TiltBrush
             if (objectType == typeof(Vector3))
             {
                 customWriter.WriteValue((Vector3)value);
+            }
+            else if (objectType == typeof(Vector4))
+            {
+                customWriter.WriteValue((Vector4)value);
             }
             else if (objectType == typeof(Vector2))
             {
@@ -344,6 +367,7 @@ namespace TiltBrush
         {
             JsonContract contract = base.CreateContract(objectType);
             if (objectType == typeof(Vector3)
+                || objectType == typeof(Vector4)
                 || objectType == typeof(Vector2)
                 || objectType == typeof(Color)
                 || objectType == typeof(Color32)

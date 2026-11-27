@@ -155,6 +155,13 @@ namespace TiltBrush
                     var paramDict = GetMethodParameters(prop);
                     foreach (var param in prop.GetParameters())
                     {
+                        // MoonSharp injects these values; callers do not supply them in Lua.
+                        if (param.ParameterType == typeof(Script) ||
+                            param.ParameterType == typeof(ScriptExecutionContext) ||
+                            param.ParameterType == typeof(CallbackArguments))
+                        {
+                            continue;
+                        }
                         string description;
                         string defaultValue = param.DefaultValue?.ToString();
                         if (defaultValue is "True" or "False") defaultValue = defaultValue.ToLower(); // Lua bools are lower case
