@@ -42,7 +42,7 @@ namespace TiltBrush
             if (WidgetManager.m_Instance == null) { sm_dirty = false; return; }
             foreach (var stencil in WidgetManager.m_Instance.StencilWidgets)
             {
-                if (stencil != null && stencil.gameObject.activeInHierarchy)
+                if (stencil != null)
                 {
                     sm_cache.Add(new Cached { widget = stencil });
                 }
@@ -152,11 +152,12 @@ namespace TiltBrush
             if (sm_dirty) { RebuildCache(); }
             foreach (var cached in sm_cache)
             {
-                if (cached.widget == null || !cached.widget.gameObject.activeInHierarchy)
+                if (cached.widget == null)
                 {
                     sm_dirty = true;
                     continue;
                 }
+                if (!cached.widget.gameObject.activeInHierarchy) { continue; }
 
                 float distance = DistanceToStencil(cached.widget, worldPos);
                 if (distance < closestDistance)
