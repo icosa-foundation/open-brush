@@ -391,7 +391,7 @@ namespace TiltBrush
                 recordCommand: false, color: m_Color, skipIntroAnimation: true);
             clone.m_PreviousCanvas = m_PreviousCanvas;
             clone.transform.SetParent(transform.parent, true);
-            clone.SetSignedWidgetSize(size);
+            clone.RestoreSignedWidgetSize(size);
             clone.CustomDimension = CustomDimension;
             clone.CloneInitialMaterials(this);
             if (m_MaterialSettings != null) clone.SetMaterialSettings(m_MaterialSettings);
