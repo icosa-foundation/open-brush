@@ -83,8 +83,15 @@ namespace TiltBrush
 
         override protected bool HandleIntersectionWithWidget(GrabWidget widget)
         {
+            if (!PointerManager.m_Instance.RecolorOn) { return false; }
+            if (widget is EditableModelWidget shape)
+            {
+                bool repainted = SketchMemoryScript.m_Instance.MemorizeShapeRepaint(shape, PointerManager.m_Instance.PointerColor);
+                if (repainted) { PlayModifyStrokeSound(); }
+                return repainted;
+            }
             // Rebrush, resize and jitter have no voxel equivalent.
-            if (!PointerManager.m_Instance.RecolorOn || widget is not ModelWidget modelWidget ||
+            if (widget is not ModelWidget modelWidget ||
                 modelWidget.Pinned || m_RecoloredVoxWidgets.Contains(modelWidget)) return false;
             var document = m_VoxTarget.GetDocument(modelWidget);
             if (document == null) return false;

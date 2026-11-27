@@ -69,6 +69,7 @@ namespace TiltBrush
                 UnityEngine.Profiling.Profiler.BeginSample("BuildModelMeshes");
                 // TODO: inactive ModelWidgets should be fixed in WidgetManager.
                 var (exportable, notExportable) = WidgetManager.m_Instance.ModelWidgets
+                    .Concat(WidgetManager.m_Instance.EditableModelWidgets)
                     .Where(w => w.Model != null && w.isActiveAndEnabled)
                     .Partition(IsModelExportable);
                 BuildModelsAsModelMeshes(payload, exportable);
@@ -87,9 +88,10 @@ namespace TiltBrush
                 var (images, notImages) = media2dWidgets.Partition(w => w is ImageWidget);
                 var (exportable, notExportable) = images.Cast<ImageWidget>().Partition(IsImageExportable);
 
-                foreach (var group in exportable.GroupBy(widget => widget.ReferenceImage))
+                int imageMaterialId = 0;
+                foreach (var group in exportable.GroupBy(widget => (widget.ReferenceImage, widget.ImageColor, widget.BlendMode)))
                 {
-                    ReferenceImage ri = group.Key;
+                    ReferenceImage ri = group.Key.ReferenceImage;
                     if (ri == null)
                     {
                         Debug.Assert(false, "Empty ImageWidgets");
@@ -111,11 +113,11 @@ namespace TiltBrush
                         string texturePath = $"{temporaryDirectory}/{Path.GetFileName(ri.FileName)}.png";
                         File.WriteAllBytes(texturePath, bytes);
                         var newRi = new ReferenceImage(texturePath);
-                        material = CreateImageQuadMaterial(newRi);
+                        material = CreateImageQuadMaterial(newRi, group.First(), imageMaterialId++);
                     }
                     else
                     {
-                        material = CreateImageQuadMaterial(ri);
+                        material = CreateImageQuadMaterial(ri, group.First(), imageMaterialId++);
                     }
                     foreach ((ImageWidget image, int idx) in group.WithIndex())
                     {
@@ -365,19 +367,28 @@ namespace TiltBrush
             return GuidUtils.Uuid5(descriptor, string.Format("{0}_{1}", ri.FileFullPath, id));
         }
 
-        static DynamicExportableMaterial CreateImageQuadMaterial(ReferenceImage ri)
+        static DynamicExportableMaterial CreateImageQuadMaterial(ReferenceImage ri, ImageWidget widget, int variant)
         {
             BrushDescriptor desc = BrushCatalog.m_Instance.GetBrush(kPbrTransparentGuid);
-            return new DynamicExportableMaterial(
+            var material = new DynamicExportableMaterial(
                 parent: desc,
                 // GetExportName() not totally guaranteed to be unique; maybe we should detect collisions?
                 durableName: $"image_{ri.GetExportName()}",
-                uniqueName: MakeDeterministicUniqueName(desc.m_Guid, ri, 0),
+                uniqueName: MakeDeterministicUniqueName(desc.m_Guid, ri, variant),
                 uriBase: Path.GetDirectoryName(ri.FileFullPath))
             {
                 BaseColorTex = Path.GetFileName(ri.FileFullPath),
+                BaseColorFactor = widget.ImageColor,
                 MetallicFactor = kRefimageMetallicFactor
             };
+            material.BlendMode = widget.BlendMode switch
+            {
+                ImageBlendMode.Additive => ExportableMaterialBlendMode.AdditiveBlend,
+                ImageBlendMode.AlphaBlend => ExportableMaterialBlendMode.AlphaBlend,
+                ImageBlendMode.Opaque => ExportableMaterialBlendMode.None,
+                _ => ExportableMaterialBlendMode.AlphaMask
+            };
+            return material;
         }
 
         // widget.ReferenceImage must be != null
@@ -582,6 +593,11 @@ namespace TiltBrush
         static IEnumerable<PrefabGeometry[]> GetPrefabGameObjs(
             SceneStatePayload payload, Model prefab)
         {
+            // Each procedural widget owns its model and keeps its template materials in sync with edits.
+            // Snapshot those materials for this export, including when instances share a shape definition.
+            var collector = prefab.GetLocation().IsGenerated()
+                ? new ImportMaterialCollector(string.Empty, $"procedural-{payload.idGenerator.GetIdFromInstanceId(prefab.m_ModelParent.gameObject)}")
+                : null;
             foreach ((MeshFilter meshFilter, int index) in prefab.GetMeshes().WithIndex())
             {
                 // Previous code let these nulls pass silently. I'm not sure why; it was definitely
@@ -599,9 +615,17 @@ namespace TiltBrush
                     Debug.LogError("Internal error: null mesh renderer");
                     yield return null;
                 }
+                var materials = renderer.sharedMaterials;
+                if (collector != null)
+                {
+                    foreach (var material in materials)
+                    {
+                        if (collector.GetExportableMaterial(material) == null) { collector.Add(material); }
+                    }
+                }
                 yield return GetPrefabGameObjMeshes(
-                    meshFilter.sharedMesh, renderer.sharedMaterials,
-                    payload, prefab, index).ToArray();
+                    meshFilter.sharedMesh, materials,
+                    payload, prefab, index, collector).ToArray();
             }
         }
 

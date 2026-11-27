@@ -1359,6 +1359,8 @@ namespace TiltBrush
                     }
 
                     m_ActiveRequests.RemoveAt(i);
+                    // Failed downloads and disk writes must also stop reporting IsLoading.
+                    m_IsLoadingMemo = null;
                     m_NotifyListeners = true;
                 }
             }

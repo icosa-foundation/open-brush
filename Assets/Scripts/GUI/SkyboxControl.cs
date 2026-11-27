@@ -136,6 +136,7 @@ namespace TiltBrush
         {
             m_Renderer.material.SetColor("_ColorA", SceneSettings.m_Instance.SkyColorA);
             m_Renderer.material.SetColor("_ColorB", SceneSettings.m_Instance.SkyColorB);
+            SceneSettings.m_Instance.ApplySkyHorizon(m_Renderer.material);
 
             if (SceneSettings.m_Instance.InGradient)
             {
@@ -151,6 +152,7 @@ namespace TiltBrush
         {
             m_Renderer.material.SetColor("_ColorA", SceneSettings.m_Instance.SkyColorA);
             m_Renderer.material.SetColor("_ColorB", SceneSettings.m_Instance.SkyColorB);
+            SceneSettings.m_Instance.ApplySkyHorizon(m_Renderer.material);
             MaintainSceneSpaceRotation();
         }
     }

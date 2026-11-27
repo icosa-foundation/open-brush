@@ -34,7 +34,8 @@ namespace TiltBrush
             ActiveWidgets.Select(w => w.SymmetryPeerGroup)
                 .Where(g => g != null && ReferenceEquals(g.Mirror, mirror)).Distinct();
 
-        internal static bool CanLink(GrabWidget widget) => widget is MediaWidget || widget is PortalWidgetBase || widget is GaussianCaptureWidgetBase;
+        // Capture regions duplicate independently; they do not share mirror placement or settings.
+        internal static bool CanLink(GrabWidget widget) => widget is MediaWidget || widget is PortalWidgetBase;
 
         internal static bool HasLinkedUsers(Model model) => model != null && ActiveWidgets
             .OfType<ModelWidget>().Any(w => w.Model == model && w.SymmetryPeerGroup != null);

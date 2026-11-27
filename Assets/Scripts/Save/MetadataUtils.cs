@@ -34,7 +34,18 @@ namespace TiltBrush
             public bool twoSided;
             public float extrusionDepth;
             public Color extrusionColor;
-            public float opacity;
+            public Color imageColor;
+            public ImageBlendMode imageBlendMode;
+        }
+
+        private static CanvasScript GetSavedCanvas(GrabWidget widget) =>
+            widget.Canvas == App.Scene.SelectionCanvas && widget.m_PreviousCanvas != null
+                ? widget.m_PreviousCanvas : widget.Canvas;
+
+        private static TrTransform GetSavedTransform(GrabWidget widget, TrTransform transform)
+        {
+            var canvas = GetSavedCanvas(widget);
+            return canvas == widget.Canvas ? transform : canvas.Pose.inverse * widget.Canvas.Pose * transform;
         }
 
         public sealed class EditableVoxSavePayload
@@ -127,13 +138,13 @@ namespace TiltBrush
             foreach (var widget in widgets)
             {
                 WidgetMetadata newEntry = new WidgetMetadata();
-                newEntry.xf = widget.GetSaveTransform();
+                newEntry.xf = GetSavedTransform(widget, widget.GetSaveTransform());
                 newEntry.modelWidget = widget;
+                newEntry.widgetLink = links?.Get(widget);
                 newEntry.subtree = widget.Subtree;
                 newEntry.pinned = widget.Pinned;
                 newEntry.groupId = groupIdMapping.GetId(widget.Group);
-                newEntry.widgetLink = links?.Get(widget);
-                newEntry.layerId = App.Scene.GetIndexOfCanvas(widget.Canvas);
+                newEntry.layerId = App.Scene.GetIndexOfCanvas(GetSavedCanvas(widget));
                 modelLocationMap[widget.Model.GetLocation()].Add(newEntry);
             }
 
@@ -198,23 +209,63 @@ namespace TiltBrush
                 .OrderBy(ByModelLocation).ToArray();
         }
 
+        public static Dictionary<string, EditableModelDefinitionData> GetEditableModelDefinitions()
+        {
+            var definitions = new Dictionary<string, EditableModelDefinitionData>(
+                MeshEditing.EditableModelManager.RetainedDefinitions);
+            foreach (var widget in WidgetManager.m_Instance.EditableModelWidgets.Where(widget => widget.gameObject.activeSelf))
+            {
+                definitions[widget.Definition.Id] = widget.Definition.Data;
+            }
+            return definitions.Count == 0 ? null : definitions;
+        }
+
+        public static TiltEditableModels[] GetTiltEditableModels(GroupIdMapping groupIdMapping, WidgetLinkSaveContext links = null)
+        {
+            var models = new List<TiltEditableModels>();
+            foreach (var group in WidgetManager.m_Instance.EditableModelWidgets
+                         .Where(widget => widget.gameObject.activeSelf).GroupBy(widget => widget.Definition.Id))
+            {
+                var widgets = group.OrderBy(widget => ByTranslation(GetSavedTransform(widget, widget.GetSaveTransform()))).ToArray();
+                models.Add(new TiltEditableModels
+                {
+                    Location = Model.Location.Generated(group.Key),
+                    RawTransforms = widgets.Select(widget => GetSavedTransform(widget, widget.GetSaveTransform())).ToArray(),
+                    PinStates = widgets.Select(widget => widget.Pinned).ToArray(),
+                    GroupIds = widgets.Select(widget => groupIdMapping.GetId(widget.Group)).ToArray(),
+                    LayerIds = widgets.Select(widget => App.Scene.GetIndexOfCanvas(GetSavedCanvas(widget))).ToArray(),
+                    Colors = widgets.Select(widget => widget.m_Color).ToArray(),
+                    AxisScales = widgets.Select(widget => widget.CustomDimension).ToArray(),
+                    WidgetLinks = links == null ? null : widgets.Select(links.Get).ToArray(),
+                    Materials = widgets.Any(widget => widget.MaterialSettings != null)
+                        ? widgets.Select(widget => widget.MaterialSettings?.Clone()).ToArray() : null
+                });
+            }
+            models.AddRange(MeshEditing.EditableModelManager.RetainedInstances.Select(model =>
+                links == null ? model : links.CaptureMissing(model)));
+            return models.Count == 0 ? null : models.ToArray();
+        }
+
         public static TiltText[] GetTiltText(GroupIdMapping groupIdMapping, WidgetLinkSaveContext links = null)
         {
             return WidgetManager.m_Instance.TextWidgets.Where(x => x.gameObject.activeSelf && (links == null || links.Includes(x))).Select(x => ConvertTextWidgetToTiltText(x)).ToArray();
 
             TiltText ConvertTextWidgetToTiltText(TextWidget widget)
             {
+                CanvasScript savedCanvas = GetSavedCanvas(widget);
+                TrTransform savedTransform = GetSavedTransform(widget, widget.SaveTransform);
                 TiltText text = new TiltText
                 {
-                    Transform = widget.SaveTransform,
+                    Transform = savedTransform,
                     Text = widget.Text,
-                    LayerId = App.Scene.GetIndexOfCanvas(widget.Canvas),
+                    LayerId = App.Scene.GetIndexOfCanvas(savedCanvas),
                     FillColor = widget.TextColor,
                     Pinned = widget.Pinned,
                     GroupId = groupIdMapping.GetId(widget.Group),
                     WidgetLink = links?.Get(widget),
                     StrokeColor = widget.StrokeColor,
-                    Font = "Oswald-Regular",
+                    Font = widget.FontReference,
+                    Layout = widget.CaptureLayout(),
                     ExtrudeDepth = 0,
                     Mode = widget.Mode,
                 };
@@ -417,15 +468,17 @@ namespace TiltBrush
             {
                 var light = lightWidget.GetComponentInChildren<Light>();
                 var newEntry = new TiltLights();
-                newEntry.Transform = lightWidget.GetSaveTransform();
+                newEntry.Transform = GetSavedTransform(lightWidget, lightWidget.GetSaveTransform());
                 newEntry.Pinned = lightWidget.Pinned;
                 newEntry.GroupId = groupIdMapping.GetId(lightWidget.Group);
                 newEntry.WidgetLink = links?.Get(lightWidget);
-                newEntry.LayerId = App.Scene.GetIndexOfCanvas(lightWidget.Canvas);
+                newEntry.LayerId = App.Scene.GetIndexOfCanvas(GetSavedCanvas(lightWidget));
 
                 newEntry.PunctualLightType = light.type;
                 newEntry.Intensity = light.intensity;
                 newEntry.LightColor = light.color;
+                newEntry.Enabled = light.enabled;
+                newEntry.Shadows = light.shadows;
 
                 if (light.type == LightType.Spot)
                 {
@@ -454,33 +507,32 @@ namespace TiltBrush
 
             // From the list of image widgets in the sketch, create a map that contains a unique
             // entry per image, with associated metadata (transform and pin state) stored as arrays.
-            Dictionary<string, List<WidgetMetadata>> imagesByPath =
-                new Dictionary<string, List<WidgetMetadata>>();
-            Dictionary<string, float> aspectRatios = new Dictionary<string, float>();
+            var imagesByPath = new Dictionary<(string Path, float Aspect), List<WidgetMetadata>>();
             foreach (var image in imports)
             {
                 string path = image.RelativePath;
+                var key = (Path: path, Aspect: image.AspectRatio ?? 1);
                 if (image.AspectRatio == null)
                 {
                     Debug.LogError("Trying to save partially-initialized image {fileName}");
                 }
-                if (!imagesByPath.ContainsKey(path))
+                if (!imagesByPath.ContainsKey(key))
                 {
-                    imagesByPath[path] = new List<WidgetMetadata>();
-                    aspectRatios[path] = image.AspectRatio ?? 1;
+                    imagesByPath[key] = new List<WidgetMetadata>();
                 }
                 WidgetMetadata newEntry = new WidgetMetadata();
-                newEntry.xf = image.SaveTransform;
+                newEntry.xf = GetSavedTransform(image, image.SaveTransform);
                 newEntry.pinned = image.Pinned;
                 newEntry.tinted = image.UseLegacyTint;
                 newEntry.groupId = groupIdMapping.GetId(image.Group);
-                newEntry.widgetLink = links?.Get(image);
-                newEntry.layerId = App.Scene.GetIndexOfCanvas(image.Canvas);
+                newEntry.layerId = App.Scene.GetIndexOfCanvas(GetSavedCanvas(image));
                 newEntry.twoSided = image.TwoSided;
-                newEntry.opacity = image.Opacity;
+                newEntry.imageColor = image.ImageColor;
+                newEntry.imageBlendMode = image.BlendMode;
+                newEntry.widgetLink = links?.Get(image);
                 newEntry.extrusionDepth = image.ExtrusionDepth;
                 newEntry.extrusionColor = image.ExtrusionColor;
-                imagesByPath[path].Add(newEntry);
+                imagesByPath[key].Add(newEntry);
             }
 
             // Build the save metadata from our unique map.
@@ -489,9 +541,9 @@ namespace TiltBrush
             {
                 var val = new TiltImages75
                 {
-                    FilePath = elem.Key,
-                    FileName = Path.GetFileName(elem.Key),
-                    AspectRatio = aspectRatios[elem.Key]
+                    FilePath = elem.Key.Path,
+                    FileName = Path.GetFileName(elem.Key.Path),
+                    AspectRatio = elem.Key.Aspect
                 };
 
                 // Order and align the metadata.
@@ -517,13 +569,15 @@ namespace TiltBrush
                     val.ExtrusionDepths[i] = ordered[i].extrusionDepth;
                     val.ExtrusionColors[i] = ordered[i].extrusionColor;
                 }
-                if (ordered.Any(m => m.opacity < 1.0f))
+                if (ordered.Any(m => !m.imageColor.Equals(Color.white)))
                 {
-                    val.Opacities = ordered.Select(m => m.opacity).ToArray();
+                    val.Colors = ordered.Select(m => m.imageColor).ToArray();
                 }
+                if (ordered.Any(m => m.imageBlendMode != ImageBlendMode.Cutout))
+                { val.BlendModes = ordered.Select(m => m.imageBlendMode).ToArray(); }
                 imageIndex.Add(val);
             }
-            return imageIndex.OrderBy(i => i.FileName).ToArray();
+            return imageIndex.OrderBy(i => i.FileName).ThenBy(i => i.AspectRatio).ToArray();
         }
 
         public static void VerifyMetadataVersion(SketchMetadata data)

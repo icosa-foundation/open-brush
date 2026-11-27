@@ -26,10 +26,18 @@ namespace TiltBrush
         private Quaternion m_EndOrientation;
 
         private bool m_Final;
+        private Color? m_StartHorizon;
+        private Color? m_EndHorizon;
 
         public ModifySkyboxCommand(Color endColorA, Color endColorB, Quaternion endOrient,
-                                   bool final = false, BaseCommand parent = null) : base(parent)
+                                   bool final = false, BaseCommand parent = null)
+            : this(endColorA, endColorB, endOrient, SceneSettings.m_Instance.SkyHorizonColor, final, parent) { }
+
+        public ModifySkyboxCommand(Color endColorA, Color endColorB, Quaternion endOrient,
+                                   Color? horizon, bool final = false, BaseCommand parent = null) : base(parent)
         {
+            m_StartHorizon = SceneSettings.m_Instance.SkyHorizonColor;
+            m_EndHorizon = horizon;
             m_StartColorA = SceneSettings.m_Instance.SkyColorA;
             m_StartColorB = SceneSettings.m_Instance.SkyColorB;
             m_StartOrientation = SceneSettings.m_Instance.GradientOrientation;
@@ -46,6 +54,7 @@ namespace TiltBrush
             SceneSettings.m_Instance.SkyColorA = m_StartColorA;
             SceneSettings.m_Instance.SkyColorB = m_StartColorB;
             SceneSettings.m_Instance.GradientOrientation = m_StartOrientation;
+            SceneSettings.m_Instance.SkyHorizonColor = m_StartHorizon;
         }
 
         override protected void OnRedo()
@@ -53,6 +62,7 @@ namespace TiltBrush
             SceneSettings.m_Instance.SkyColorA = m_EndColorA;
             SceneSettings.m_Instance.SkyColorB = m_EndColorB;
             SceneSettings.m_Instance.GradientOrientation = m_EndOrientation;
+            SceneSettings.m_Instance.SkyHorizonColor = m_EndHorizon;
         }
 
         public override bool Merge(BaseCommand other)
@@ -64,6 +74,7 @@ namespace TiltBrush
             m_EndColorA = skyboxCommand.m_EndColorA;
             m_EndColorB = skyboxCommand.m_EndColorB;
             m_EndOrientation = skyboxCommand.m_EndOrientation;
+            m_EndHorizon = skyboxCommand.m_EndHorizon;
             m_Final = skyboxCommand.m_Final;
             return true;
         }
