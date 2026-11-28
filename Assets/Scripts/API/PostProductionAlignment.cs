@@ -47,6 +47,11 @@ namespace TiltBrush
         private static void ResetStaticState()
         {
             lock (s_ReadoutLock) { s_Readouts.Clear(); }
+            InvalidateCentres();
+        }
+
+        internal static void InvalidateCentres()
+        {
             s_CentreStrokeCount = -1;
             s_AllCentreScene = Vector3.zero;
             s_LayerCentreCanvas.Clear();
@@ -185,7 +190,7 @@ namespace TiltBrush
         // Centres of the strokes' control-point bounds: all strokes in scene space (global
         // pivot) and each layer's strokes in that layer's canvas space (layer pivots). Uses
         // the full memory list, so pivots don't move when scrubbing or hiding layers.
-        // Recomputed when the stroke count changes.
+        // Recomputed after a session ends or the stroke count changes.
         private static void RefreshCentresIfNeeded()
         {
             var strokes = SketchMemoryScript.m_Instance.GetMemoryList;

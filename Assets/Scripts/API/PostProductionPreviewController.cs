@@ -291,6 +291,7 @@ namespace TiltBrush
             PostProductionLens.Clear();
             ScreenshotManager.ClearCalibratedCamera();
             PostProductionSettings.ClearSession();
+            PostProductionAlignment.InvalidateCentres();
             PostProductionSettings.LoadCount++;
             if (m_Instance != null)
             {
