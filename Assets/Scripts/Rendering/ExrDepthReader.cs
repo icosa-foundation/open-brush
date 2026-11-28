@@ -23,7 +23,7 @@ namespace TiltBrush
     // Reads the one EXR variant Open Brush's own depth pipeline writes and this
     // branch's post-production media pipeline bakes real-footage depth to (see
     // POSTPROD_PREVIEW_PLAN.md stage 4): a single-part scanline EXR, one channel
-    // named "Y", pixel type FLOAT, compression NONE/ZIPS/ZIP. This is deliberately
+    // named "Y", pixel type FLOAT, compression NONE/RLE/ZIPS/ZIP. This is deliberately
     // NOT a general OpenEXR reader - tiled, multi-part, deep, or differently-shaped
     // files throw rather than being silently misread.
     //
@@ -55,7 +55,7 @@ namespace TiltBrush
         public static float[] ReadSingleChannelFloat(string path, out int width, out int height)
         {
             byte[] data = File.ReadAllBytes(path);
-            return Decode(data, path, n => new float[n], bottomRowFirst: false, reuseScratch: false,
+            return Decode(data, data.Length, path, n => new float[n], bottomRowFirst: false, reuseScratch: false,
                 out width, out height);
         }
 
@@ -68,8 +68,8 @@ namespace TiltBrush
         public static float[] ReadSingleChannelFloatPooled(string path, Func<int, float[]> rentPixels,
             out int width, out int height)
         {
-            byte[] data = ReadFileReusingBuffer(path);
-            return Decode(data, path, rentPixels, bottomRowFirst: true, reuseScratch: true,
+            byte[] data = ReadFileReusingBuffer(path, out int length);
+            return Decode(data, length, path, rentPixels, bottomRowFirst: true, reuseScratch: true,
                 out width, out height);
         }
 
@@ -77,11 +77,11 @@ namespace TiltBrush
         [ThreadStatic] private static byte[] t_RawBuffer;
         [ThreadStatic] private static byte[] t_ReorderBuffer;
 
-        private static byte[] ReadFileReusingBuffer(string path)
+        private static byte[] ReadFileReusingBuffer(string path, out int length)
         {
             using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read, 1,
                 FileOptions.SequentialScan);
-            int length = (int)stream.Length;
+            length = (int)stream.Length;
             if (t_FileBuffer == null || t_FileBuffer.Length < length) { t_FileBuffer = new byte[length]; }
             int total = 0;
             while (total < length)
@@ -100,7 +100,7 @@ namespace TiltBrush
         }
 
         // data may be longer than the file (a reused buffer); everything is read by offset.
-        private static float[] Decode(byte[] data, string path, Func<int, float[]> allocatePixels,
+        private static float[] Decode(byte[] data, int length, string path, Func<int, float[]> allocatePixels,
             bool bottomRowFirst, bool reuseScratch, out int width, out int height)
         {
             int pos = 0;
@@ -192,8 +192,13 @@ namespace TiltBrush
 
             for (int c = 0; c < numChunks; c++)
             {
+                if (pos > length - 8) { throw new InvalidDataException($"Truncated EXR chunk header: {path}"); }
                 int chunkY = ReadInt32(data, ref pos);
                 int chunkSize = ReadInt32(data, ref pos);
+                if (chunkSize < 0 || chunkSize > length - pos)
+                {
+                    throw new InvalidDataException($"Invalid EXR chunk size {chunkSize}: {path}");
+                }
                 int chunkStart = pos;
                 pos += chunkSize;
 
@@ -210,7 +215,14 @@ namespace TiltBrush
                 }
                 else
                 {
-                    InflateZlib(data, chunkStart, chunkSize, raw, rawSize);
+                    if (compression == (byte)CompressionType.Rle)
+                    {
+                        DecodeRle(data.AsSpan(chunkStart, chunkSize), raw.AsSpan(0, rawSize));
+                    }
+                    else
+                    {
+                        InflateZlib(data, chunkStart, chunkSize, raw, rawSize);
+                    }
                     UnPredict(raw, rawSize);
                     byte[] reordered = reuseScratch ? Scratch(ref t_ReorderBuffer, rawSize) : new byte[rawSize];
                     UnReorder(raw, reordered, rawSize);
@@ -265,7 +277,7 @@ namespace TiltBrush
             return channelCount == 1 && isSingleFloatY;
         }
 
-        // Reverses the EXR ZIP/ZIPS "predictor" pass in place: each byte (after the
+        // Reverses the EXR RLE/ZIP/ZIPS "predictor" pass in place: each byte (after the
         // first) was stored as a running difference from the previous byte, biased by
         // 128 and wrapped mod 256 on write. This undoes that with a cumulative sum.
         // Only the first n bytes are used (buffers may be reused and longer).
@@ -277,7 +289,7 @@ namespace TiltBrush
             }
         }
 
-        // Reverses the EXR ZIP/ZIPS "reorder" pass: on write, the byte stream was split
+        // Reverses the EXR RLE/ZIP/ZIPS "reorder" pass: on write, the byte stream was split
         // into two halves and interleaved (even output positions from the first half,
         // odd output positions from the second). This de-interleaves the first n bytes of
         // buf back into outBuf.
@@ -291,6 +303,37 @@ namespace TiltBrush
             for (int i = 0; i < n - half; i++)
             {
                 outBuf[i * 2 + 1] = buf[half + i];
+            }
+        }
+
+        private static void DecodeRle(ReadOnlySpan<byte> input, Span<byte> output)
+        {
+            int written = 0;
+            while (!input.IsEmpty)
+            {
+                // Negative headers give the literal byte count. Other headers give
+                // the repeat count minus one, followed by the byte to repeat.
+                int header = unchecked((sbyte)input[0]);
+                input = input.Slice(1);
+                bool literal = header < 0;
+                int count = literal ? -header : header + 1;
+                int encodedCount = literal ? count : 1;
+                if (encodedCount > input.Length || count > output.Length - written)
+                {
+                    throw new InvalidDataException("Invalid EXR RLE scanline packet");
+                }
+
+                Span<byte> packet = output.Slice(written, count);
+                if (literal) { input.Slice(0, count).CopyTo(packet); }
+                else { packet.Fill(input[0]); }
+                input = input.Slice(encodedCount);
+                written += count;
+            }
+
+            if (written != output.Length)
+            {
+                throw new InvalidDataException(
+                    $"EXR RLE scanline decompressed to {written} bytes, expected {output.Length}");
             }
         }
 
