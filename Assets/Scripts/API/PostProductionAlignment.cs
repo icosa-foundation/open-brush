@@ -197,7 +197,8 @@ namespace TiltBrush
             foreach (var stroke in strokes)
             {
                 if (stroke.m_ControlPoints == null) { continue; }
-                CanvasScript canvas = stroke.m_IntendedCanvas != null ? stroke.m_IntendedCanvas : App.Scene.MainCanvas;
+                CanvasScript canvas = stroke.Canvas;
+                if (canvas == null) { canvas = App.Scene.MainCanvas; }
                 TrTransform canvasPose = Coords.AsLocal[canvas.transform];
                 bool haveLayer = perCanvas.TryGetValue(canvas, out Bounds layerBounds);
                 foreach (var cp in stroke.m_ControlPoints)
