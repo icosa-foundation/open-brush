@@ -162,6 +162,7 @@ namespace TiltBrush
 
         public static State CurrentState { get; private set; } = State.Idle;
         public static bool IsRunning => CurrentState == State.Running;
+        internal static bool IsFrameStaged => IsRunning && s_StagedFrame >= 0;
 
         // Editor Play sessions keep static state (no domain reload). Leaving Play mode
         // cancels a running export (OnQuit), but its cleanup runs on the main thread in a

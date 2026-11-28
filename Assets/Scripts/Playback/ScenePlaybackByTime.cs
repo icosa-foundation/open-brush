@@ -312,7 +312,9 @@ namespace TiltBrush
             }
 
             int pendingStrokes = 0;
-            if (currentTimeMs != 0)
+            // A staged export captures after this update. At zero, layer offsets
+            // can already have made part or all of a stroke visible.
+            if (currentTimeMs != 0 || PostProductionExport.IsFrameStaged)
             {
                 for (int i = 0; i < m_strokePlaybacks.Length; ++i)
                 {
