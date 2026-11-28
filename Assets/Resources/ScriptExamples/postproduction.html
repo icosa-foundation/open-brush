@@ -1,0 +1,882 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset='UTF-8'>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Post-production compositing preview</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.1/dist/css/bootstrap.min.css" rel="stylesheet"
+          integrity="sha384-+0n0xVW2eSR5OomGNYDnhzAbDsOXxcvSN1TPprVMTNDbiYZCxYbOOl7+AMvyTG2x" crossorigin="anonymous">
+    <style>
+        div.container {line-height: 1.6; padding-bottom: 40px;}
+        input:not([type=checkbox]):not([type=range]) {width: 110px;}
+        input.wide {width: 320px !important;}
+        input.narrow {width: 70px !important;}
+        .statusbox {font-family: monospace; font-size: 12px; white-space: pre-wrap;
+            background: #f4f4f4; border: 1px solid #ccc; padding: 8px; max-height: 120px; overflow-y: auto;}
+        .statusbox.tall {max-height: 320px;}
+        #scrub {width: 100%;}
+        .titlerow {display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 8px; margin: 12px 0 4px;}
+        .titlerow h3 {margin: 0 12px 0 0;}
+        .titlerow .label {color: #666; font-size: 13px;}
+        .titlerow .value {font-family: monospace; font-size: 13px; margin-right: 8px;}
+        .titlerow button {margin-left: auto; align-self: center;}
+        /* Sits in workflow order after View, then stays pinned once scrolled to. */
+        .timeline {position: sticky; top: 0; z-index: 10; background: #fff; border-top: 1px solid #ccc;
+            border-bottom: 1px solid #ccc; padding: 6px 0 4px; margin: 14px 0 8px;}
+        .row-line {display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px; margin: 4px 0;}
+        .row-line .label {color: #666; font-size: 13px;}
+        .row-line .value {font-family: monospace; font-size: 13px; margin-right: 8px;}
+        .row-line .sep {width: 12px;}
+        .row-line .name, .setting .name {display: inline-block; width: 100px;}
+        details > summary {font-size: 1.15rem; font-weight: 600; margin: 14px 0 6px; cursor: pointer;}
+        details > summary.minor {font-size: 0.95rem; font-weight: 400;}
+        details[open] > summary {border-bottom: 1px solid #eee;}
+        h6 {margin: 12px 0 2px;}
+        .hint {color: #666; font-size: 13px; margin: 4px 0;}
+        h6 .hint {font-weight: 400;}
+        progress {width: 100%;}
+        .seg {margin: 6px 0;}
+        .seg button {margin-right: -1px; border: 1px solid #888; background: #f4f4f4; padding: 2px 10px;}
+        .seg button.active {background: #0d6efd; color: #fff; border-color: #0d6efd;}
+        table.layers {border-collapse: collapse; margin-top: 6px;}
+        table.layers th, table.layers td {padding: 4px 8px; border-bottom: 1px solid #ddd; vertical-align: middle;}
+        table.layers th {font-weight: 600; font-size: 13px; color: #555;}
+        table.layers td.readout {font-family: monospace; font-size: 12px; color: #333;}
+        table.layers tr.target td {background: #eef4ff;}
+        table.layers input[type=number] {width: 80px;}
+        table.layers .frames {color: #666; font-size: 12px; margin: 0 4px;}
+        .banner {background: #fff3cd; border: 1px solid #e0c060; padding: 6px 12px; margin-bottom: 6px;}
+        .setting {margin: 4px 0;}
+        .setting .seg {display: inline-block; margin: 0;}
+        dialog.picker {min-width: 360px; border: 1px solid #888; border-radius: 6px; padding: 16px;}
+        dialog.picker .list {max-height: 360px; overflow-y: auto; margin: 8px 0;}
+        dialog.picker .list button {display: block; width: 100%; text-align: left; border: 0;
+            background: none; padding: 4px 8px;}
+        dialog.picker .list button:hover {background: #eef4ff;}
+    </style>
+</head>
+
+<body>
+<div class="container">
+    <div class="titlerow">
+        <h3>Post-production</h3>
+        <span class="label">Sketch</span> <span class="value" id="barSketch">-</span>
+        <span class="label">Clip</span> <span class="value" id="barClip">-</span>
+        <button onclick="savePostProdMetadata()"
+            title="Saves only the post-production settings (the sketch's PostProduction block: clip folder, offsets, export range, visible layers, depth filter). The strokes and the rest of the sketch are never changed. Nothing auto-saves.">Save post-production settings</button>
+    </div>
+    <details id="secLoad" open>
+        <summary>Load</summary>
+        <div class="row-line">
+            <span class="name">Sketch</span>
+            <input id="sketchName" class="wide" value="">
+            <button onclick="openPicker('Open sketch', 'query.postprod.list.sketches', 'sketchName', loadSketch)">Open...</button>
+            <button onclick="loadSketch()">Load</button>
+        </div>
+        <div class="row-line">
+            <span class="name">Clip</span>
+            <input id="clipDir" class="wide" value="">
+            <button onclick="openPicker('Open clip', 'query.postprod.list.clips', 'clipDir', loadClip)">Open...</button>
+            <button onclick="loadClip()">Load</button>
+        </div>
+        <p class="hint">A sketch saved with a clip loads the clip too. Clips come from Open Brush's
+            <code>Media Library\PostProd</code> folder; each has a <code>clip.json</code> from preprocessing.</p>
+        <div class="statusbox" id="clipInfo">(no clip loaded)</div>
+    </details>
+    <details id="secView" open>
+        <summary>View</summary>
+        <div class="setting"><span class="name">Preview</span><div class="seg" data-key="preview">
+            <button data-value="1" data-cmd="postprod.preview=1">On</button><button data-value="0" data-cmd="postprod.preview=0">Off</button>
+        </div></div>
+        <div class="setting"><span class="name">Background</span><div class="seg" data-key="background">
+            <button data-value="video" data-cmd="postprod.preview.cgonly=0">Video</button><button data-value="cg" data-cmd="postprod.preview.cgonly=1">CG only</button>
+        </div></div>
+        <div class="setting"><span class="name">Occlusion</span><div class="seg" data-key="occlusion">
+            <button data-value="depth" data-cmd="postprod.preview.naivemode=0">Depth-aware</button><button data-value="off" data-cmd="postprod.preview.naivemode=1">Off (CG on top)</button>
+        </div></div>
+        <div class="setting"><span class="name">Lens</span><div class="seg" data-key="lens">
+            <button data-value="undistorted" data-cmd="postprod.preview.lens.undistort=1">Undistorted</button><button data-value="raw" data-cmd="postprod.preview.lens.undistort=0">Raw plate</button>
+        </div></div>
+        <div class="setting"><span class="name">Bloom</span><div class="seg" data-key="bloom">
+            <button data-value="1" data-cmd="postprod.preview.livecg.bloom=1">On</button><button data-value="0" data-cmd="postprod.preview.livecg.bloom=0">Off</button>
+        </div></div>
+        <div class="setting"><span class="name">Depth filter</span><div class="seg" data-key="depth"
+            title="How the footage's depth is sampled, in the preview and the export. Nearest never blends across a depth edge; bilinear suits smoothly upscaled depth. Saved with the sketch.">
+            <button data-value="nearest" data-cmd="postprod.depth.filter=nearest">Nearest</button><button data-value="bilinear" data-cmd="postprod.depth.filter=bilinear">Bilinear</button>
+        </div></div>
+        <p class="hint">The highlighted option is what Open Brush is showing. For a full-quality check, export a few frames.</p>
+    </details>
+    <div class="timeline" id="timeline">
+        <div class="banner" id="exportBanner" style="display:none">Exporting: editing is locked until the export
+            finishes or is cancelled (Export, below). The Game window shows the frames being written.</div>
+        <div class="row-line">
+            <b>Timeline</b>
+        </div>
+        <input type="range" id="scrub" min="0" max="320000" value="0" oninput="onScrubDrag()" onchange="onScrub()">
+        <div class="row-line">
+            <button onclick="shuttle(-1)" title="Reverse at the shuttle speed (J)">&#9664; J</button>
+            <button onclick="pauseSketch()" title="Stop (K)">&#9632; K</button>
+            <button onclick="shuttle(1)" title="Forward at the shuttle speed (L)">L &#9654;</button>
+            <select id="shuttleSpeed" title="Shuttle speed">
+                <option value="0.1">0.1x</option><option value="0.25" selected>0.25x</option>
+                <option value="0.5">0.5x</option><option value="1">1x</option>
+            </select>
+            <button onclick="playSketch()" title="Play at real time">Play</button>
+            <span class="sep"></span>
+            <span class="label">Sketch ms</span>
+            <input id="scrubMs" value="0" onchange="setScrubMs()" title="Type a sketch time to jump to it">
+            <span class="label">Video frame</span>
+            <input id="setVideoFrame" value="" onchange="goToVideoFrame()" title="Type a video frame to jump to it">
+            <span class="label">Video time</span> <span class="value" id="videoTimeMs">-</span> ms
+            <label class="label" title="Seek while dragging the slider, not only on release">
+                <input type="checkbox" id="liveScrub" checked> live scrub</label>
+        </div>
+    </div>
+
+    <details id="secAlign" open>
+        <summary>Adjust spatial and temporal alignment</summary>
+        <div class="row-line"><span class="name">Target</span><div class="seg" id="targetSeg"></div></div>
+
+        <h6>Time offset <span class="hint" id="timeTargetNote"></span></h6>
+        <div class="row-line">
+            <label>ms <input type="number" id="timeOffset" value="" step="1" oninput="onTimeOffsetMs()"
+                title="Negative if the sketch is ahead of the video. With the field focused, up/down arrows step it."></label>
+            <label>= frames <input type="number" id="timeOffsetFrames" value="" step="1" oninput="onTimeOffsetFrames()"></label>
+            <button onclick="nudgeTimeOffsetFrames(-10)">-10 f</button>
+            <button onclick="nudgeTimeOffsetFrames(-1)">-1 f</button>
+            <button onclick="nudgeTimeOffsetMs(-1)">-1 ms</button>
+            <button onclick="nudgeTimeOffsetMs(1)">+1 ms</button>
+            <button onclick="nudgeTimeOffsetFrames(1)">+1 f</button>
+            <button onclick="nudgeTimeOffsetFrames(10)">+10 f</button>
+        </div>
+
+        <h6>Spatial</h6>
+        <div class="row-line">
+            <label>Move step (cm) <input type="number" id="nudgeMoveStepCm" value="5" step="0.1" min="0" class="narrow"></label>
+            <button onclick="setStep('nudgeMoveStepCm', 0.5)">0.5</button>
+            <button onclick="setStep('nudgeMoveStepCm', 1)">1</button>
+            <button onclick="setStep('nudgeMoveStepCm', 5)">5</button>
+            <button onclick="setStep('nudgeMoveStepCm', 20)">20</button>
+            <span class="sep"></span>
+            <label>Turn step (&deg;) <input type="number" id="nudgeTurnStepDeg" value="0.5" step="0.05" min="0" class="narrow"></label>
+            <button onclick="setStep('nudgeTurnStepDeg', 0.1)">0.1</button>
+            <button onclick="setStep('nudgeTurnStepDeg', 0.5)">0.5</button>
+            <button onclick="setStep('nudgeTurnStepDeg', 2)">2</button>
+        </div>
+        <div class="row-line">
+            <button onclick="nudge(1, 0, 0)" title="Moves the sketch away from the camera">Back &uarr;</button>
+            <button onclick="nudge(-1, 0, 0)" title="Moves the sketch towards the camera">Forward &darr;</button>
+            <button onclick="nudge(0, -1, 0)">Left &larr;</button>
+            <button onclick="nudge(0, 1, 0)">Right &rarr;</button>
+            <button onclick="nudge(0, 0, -1)">Turn left (Q)</button>
+            <button onclick="nudge(0, 0, 1)">Turn right (E)</button>
+            <span class="sep"></span>
+            <button onclick="sendCommand('postprod.offset.spatial.revert=' + nudgeTarget); refreshNudgeReadout()">Revert to saved</button>
+            <button onclick="sendCommand('postprod.offset.spatial.reset=' + nudgeTarget); refreshNudgeReadout()">Reset</button>
+        </div>
+        <p><b><span id="nudgeTargetName">Global</span>:</b> <span id="nudgeReadout">-</span></p>
+        <p class="hint">Moves are along the floor relative to the camera; turns are about the floor under the target's
+            strokes. Keyboard (outside a field): arrows move, Q/E turn.</p>
+        <details>
+            <summary class="minor">Advanced: set <span id="directTargetName">the global</span> spatial offset directly</summary>
+            <label>x,y,z,rx,ry,rz,scale <input id="spatialDirect" class="wide" value="0,0,0,0,0,0,1"></label>
+            <button onclick="setSpatialDirect()">Set</button>
+        </details>
+    </details>
+    <details id="secLayers" open>
+        <summary>Layers</summary>
+        <button onclick="showAllLayers()">Show all</button>
+        <table class="layers">
+            <thead><tr><th>Layer</th><th>Visible</th><th></th><th>Time offset</th><th>Spatial offset</th><th></th></tr></thead>
+            <tbody id="layerRows"></tbody>
+        </table>
+        <p class="hint">Offsets are on top of the global ones. Align makes the layer the alignment target. Visibility is saved
+            with the sketch.</p>
+    </details>
+    <details id="secExport" open>
+        <summary>Export</summary>
+        <div class="row-line">
+            <label>Start frame <input type="number" id="cropStart" value="" onchange="sendCommand('postprod.crop.start=' + this.value)"></label>
+            <button onclick="setRangeFromPlayhead('start')">Set to current</button>
+            <span class="sep"></span>
+            <label>End frame <input type="number" id="cropEnd" value="" onchange="sendCommand('postprod.crop.end=' + this.value)"></label>
+            <button onclick="setRangeFromPlayhead('end')">Set to current</button>
+            <span class="sep"></span>
+            <span id="rangeLength">No range set.</span>
+            <button onclick="sendCommand('postprod.crop.clear')">Clear</button>
+        </div>
+        <div class="row-line">
+            <select id="exportFormat">
+                <option value="source" selected>Match source (.mov): same ProRes flavour, colour, timecode and audio</option>
+                <option value="prores422hq">ProRes 422 HQ (.mov)</option>
+                <option value="h264">H.264 (.mp4): quick review</option>
+            </select>
+            <button onclick="startExport()">Export</button>
+            <button class="keep" onclick="sendCommand('postprod.export.cancel'); setTimeout(pollExport, 300)">Cancel</button>
+            <button class="keep" onclick="sendCommand('postprod.export.reveal')">Show in folder</button>
+        </div>
+        <progress id="exportProgress" max="1" value="0"></progress>
+        <div class="statusbox" id="exportStatus">(no export yet)</div>
+        <p class="hint">Full quality over the range, matching the original lens, with the source audio. Written to the clip's
+            <code>exports</code> folder.</p>
+    </details>
+    <details id="secAdvanced">
+        <summary>Advanced</summary>
+        <div class="row-line">
+            <label>Slider range (ms) <input id="scrubMax" value="320000" onchange="document.getElementById('scrub').max = this.value;"></label>
+            <span class="sep"></span>
+            <label>Go to video time (ms) <input id="setVideoTimeMs" value=""></label>
+            <button onclick="seekAndSync('postprod.preview.videotime=' + document.getElementById('setVideoTimeMs').value)">Go</button>
+            <span class="sep"></span>
+            <label>Display camera <input id="camName" value=""></label>
+            <button onclick="sendCommand('postprod.preview.camera=' + document.getElementById('camName').value)">Set</button>
+        </div>
+        <div class="statusbox tall" id="statusBox">(polling...)</div>
+    </details>
+</div>
+
+<dialog class="picker" id="picker">
+    <b id="pickerTitle"></b>
+    <div class="list" id="pickerList"></div>
+    <button onclick="document.getElementById('picker').close()">Cancel</button>
+</dialog>
+
+<script>
+    // False while Open Brush can't be reached (e.g. Play mode stopped). Losing the
+    // connection also forgets "a sketch is loaded": after a restart there is no sketch,
+    // and the sketch clock just counts time since Open Brush started.
+    var connected = true;
+
+    function sendCommand(command) {
+        console.log(command);
+        var xmlHttp = new XMLHttpRequest();
+        var url = '/api/v1?' + command;
+        try {
+            xmlHttp.open('GET', url, false);
+            xmlHttp.send(null);
+            if (xmlHttp.status === 0) { throw new Error('no response'); }
+        } catch (e) {
+            if (connected) { console.log('Open Brush not reachable'); }
+            connected = false;
+            sketchLoaded = false;
+            return '';
+        }
+        connected = true;
+        return xmlHttp.responseText;
+    }
+
+    // Before any sketch is loaded, App.Instance.CurrentSketchTime is just raw
+    // elapsed level time (nothing has anchored it to a real sketch yet) - polling
+    // it into the slider before then just looks like the slider drifting on its
+    // own for no reason. Gate the sync on having actually clicked Load.
+    var sketchLoaded = false;
+
+    function savePostProdMetadata() {
+        sendCommand('postprod.metadata.save=' + document.getElementById('sketchName').value);
+        alert(sendCommand('query.postprod.metadata.save.status'));
+    }
+
+    // Open Brush processes a load a frame or more after the request returns, so the
+    // settings are read back only once its load counter shows the load has finished
+    // (reading straight away got the previous values).
+    function loadSketch() {
+        var before = sendCommand('query.postprod.loadcount');
+        sendCommand('postprod.load=' + document.getElementById('sketchName').value);
+        sketchLoaded = true;
+        var started = Date.now();
+        (function waitForLoad() {
+            var count = sendCommand('query.postprod.loadcount');
+            if (count !== before) {
+                knownLoadCount = count;
+                syncSettingsFromServer();
+            } else if (Date.now() - started < 10000) {
+                setTimeout(waitForLoad, 200);
+            } else {
+                console.log('load did not finish within 10s; settings not synced');
+            }
+        })();
+    }
+
+    // Parses FormatTrTransform's "pos=(x,y,z) rotEuler=(x,y,z) scale=s" string into
+    // the "x,y,z,rx,ry,rz,scale" format the offset input fields use.
+    function parseTrTransform(s) {
+        var m = s.match(/pos=\(([^)]+)\) rotEuler=\(([^)]+)\) scale=([\d.\-]+)/);
+        if (!m) { return null; }
+        return m[1] + ',' + m[2] + ',' + m[3];
+    }
+
+    // Repopulates every input field from the server's actual current state - must be
+    // called after loading a sketch, otherwise the fields still show their hardcoded
+    // page defaults, and hitting "Set" on one would silently overwrite whatever the
+    // just-loaded sketch had persisted (stage 8) with that stale default.
+    function syncSettingsFromServer() {
+        refreshClipInfo();
+        document.getElementById('camName').value = sendCommand('query.postprod.preview.camera');
+
+        refreshTimeOffset();
+
+        document.getElementById('cropStart').value = sendCommand('query.postprod.crop.start');
+        document.getElementById('cropEnd').value = sendCommand('query.postprod.crop.end');
+
+        // Open Brush refreshes its visibility readout every few frames.
+        setTimeout(syncLayerVisibility, 400);
+        refreshNudgeReadout();
+    }
+
+    // Follows loads the page didn't make (Remote API, Open Brush's own UI, New Empty
+    // Sketch): Open Brush bumps its load count for each, and the page fills itself in
+    // from whatever is now loaded, or clears if nothing is.
+    var knownLoadCount = null;
+
+    function followServerLoads() {
+        var count = sendCommand('query.postprod.loadcount');
+        if (!connected) { knownLoadCount = null; return; }
+        if (count === knownLoadCount) { return; }
+        knownLoadCount = count;
+        var name = sendCommand('query.postprod.sketch.name');
+        document.getElementById('sketchName').value = name;
+        if (name) {
+            sketchLoaded = true;
+            syncSettingsFromServer();
+        } else {
+            sketchLoaded = false;
+            document.getElementById('clipDir').value = '';
+            document.getElementById('clipInfo').textContent = '(no clip loaded)';
+        }
+    }
+
+    function syncLayerVisibility() {
+        var flags = sendCommand('query.postprod.layers.visible').split(',');
+        for (var i = 0; i < LAYER_COUNT; i++) {
+            document.getElementById('layerVisible' + i).checked = flags[i] !== '0';
+        }
+    }
+
+    // A browser can't hand back real file paths, so Open Brush lists what's in its own
+    // Sketches and Media Library\PostProd folders; picking one fills the field and opens it.
+    function openPicker(title, listQuery, fieldId, onPick) {
+        var names = sendCommand(listQuery).split('\n').filter(function (n) { return n; });
+        var list = document.getElementById('pickerList');
+        list.innerHTML = '';
+        if (!names.length) { list.textContent = connected ? '(nothing found)' : 'Open Brush not running'; }
+        names.forEach(function (name) {
+            var item = document.createElement('button');
+            item.textContent = name;
+            item.onclick = function () {
+                document.getElementById('picker').close();
+                document.getElementById(fieldId).value = name;
+                onPick();
+            };
+            list.appendChild(item);
+        });
+        document.getElementById('pickerTitle').textContent = title;
+        document.getElementById('picker').showModal();
+    }
+
+    function loadClip() {
+        sendCommand('postprod.clip.load=' + document.getElementById('clipDir').value);
+        refreshClipInfo();
+    }
+
+    // The clip's values are shown read-only: they come from its clip.json, not the page.
+    function refreshClipInfo() {
+        var clipDir = sendCommand('query.postprod.clip.dir');
+        if (clipDir) { document.getElementById('clipDir').value = clipDir; }
+        SOURCE_FPS = parseFloat(sendCommand('query.postprod.clip.fps')) || SOURCE_FPS;
+        document.getElementById('clipInfo').textContent = [
+            sendCommand('query.postprod.clip.status'),
+            'intrinsics (fx,fy,cx,cy,w,h): ' + (sendCommand('query.camera.intrinsics') || '-'),
+            'near,far: ' + (sendCommand('query.camera.clip') || '-'),
+            'pose (x,y,z,qx,qy,qz,qw): ' + (sendCommand('query.postprod.preview.pose') || '-'),
+            'lens (fx,fy,cx,cy,k1,k2,p1,p2,k3): ' + (sendCommand('query.postprod.lens') || '-'),
+            'frame rate: ' + SOURCE_FPS + ' fps',
+        ].join('\n');
+        showTimeOffset(currentTimeOffsetMs());
+    }
+
+    // While the user is actively dragging the slider or has just edited the ms
+    // field, pollStatus() below must not overwrite what they're typing/dragging
+    // with the live server value it just read - this window suppresses that.
+    var lastUserInteraction = 0;
+    var USER_INTERACTION_QUIET_MS = 1500;
+
+    // Dragging only updates the readout; the seek is sent once, on release, so the
+    // sketch isn't asked to chase every intermediate slider position.
+    function onScrubDrag() {
+        lastUserInteraction = Date.now();
+        var ms = document.getElementById('scrub').value;
+        document.getElementById('scrubMs').value = ms;
+        if (document.getElementById('liveScrub').checked) {
+            sketchLoaded = true;
+            requestLiveSeek(ms);
+        }
+    }
+
+    // Live scrub: only the latest slider position is ever sent, with at most one request
+    // in flight, so dragging can't build up a backlog of seeks.
+    var liveSeekInFlight = false;
+    var liveSeekPending = null;
+    function requestLiveSeek(ms) {
+        liveSeekPending = ms;
+        if (!liveSeekInFlight) { flushLiveSeek(); }
+    }
+
+    function flushLiveSeek() {
+        if (liveSeekPending === null) { return; }
+        var ms = liveSeekPending;
+        liveSeekPending = null;
+        liveSeekInFlight = true;
+        var xhr = new XMLHttpRequest();
+        xhr.open('GET', '/api/v1?sketch.currenttime=' + ms, true);
+        xhr.onloadend = function () {
+            liveSeekInFlight = false;
+            setTimeout(flushLiveSeek, 30);
+        };
+        xhr.send(null);
+    }
+
+    function onScrub() {
+        lastUserInteraction = Date.now();
+        var ms = document.getElementById('scrub').value;
+        document.getElementById('scrubMs').value = ms;
+        seekAndSync('sketch.currenttime=' + ms);
+    }
+
+    function setScrubMs() {
+        lastUserInteraction = Date.now();
+        var ms = document.getElementById('scrubMs').value;
+        document.getElementById('scrub').value = ms;
+        seekAndSync('sketch.currenttime=' + ms);
+    }
+
+    // Any seek from the page (slider, typed time, video time/frame) proves a sketch is
+    // loaded, however it was loaded, and reads the resulting sketch time straight back
+    // into the slider - after a short delay, because Open Brush applies the seek and
+    // updates the reported time on its next frame.
+    // Global alignment nudges: direction multipliers (+1/-1/0) times the chosen steps.
+    function nudge(forward, right, turn) {
+        var move = (parseFloat(document.getElementById('nudgeMoveStepCm').value) || 0) / 100.0;
+        var step = parseFloat(document.getElementById('nudgeTurnStepDeg').value) || 0;
+        sendCommand('postprod.offset.spatial.nudge=' + nudgeTarget + ',' +
+            (forward * move) + ',' + (right * move) + ',' + (turn * step));
+        refreshNudgeReadout();
+    }
+
+    // Time offset of the alignment target (global, or a layer on top of the global one), in
+    // ms and in source video frames. The frame rate comes from the clip manifest
+    // (refreshClipInfo); 60 until a clip is loaded. The offset itself is whole milliseconds.
+    var SOURCE_FPS = 60;
+
+    function showTimeOffset(ms, skipField) {
+        if (skipField !== 'ms') { document.getElementById('timeOffset').value = Math.round(ms); }
+        if (skipField !== 'frames') {
+            document.getElementById('timeOffsetFrames').value = (ms * SOURCE_FPS / 1000).toFixed(2);
+        }
+    }
+
+    function refreshTimeOffset() {
+        var ms = nudgeTarget < 0
+            ? sendCommand('query.postprod.offset.time.global')
+            : sendCommand('query.postprod.offset.time.layer.raw=' + nudgeTarget);
+        showTimeOffset(parseFloat(ms) || 0);
+        document.getElementById('timeTargetNote').textContent =
+            nudgeTarget < 0 ? '(global; negative if the sketch is ahead of the video)'
+                : '(' + layerLabel(nudgeTarget) + ', on top of the global offset; + = later)';
+    }
+
+    // Each layer change redraws that layer's strokes shifted in time; the video follows the
+    // global offset only.
+    function applyTimeOffset(ms, skipField) {
+        ms = Math.round(ms);
+        sendCommand(nudgeTarget < 0
+            ? 'postprod.offset.time.global=' + ms
+            : 'postprod.offset.time.layer=' + nudgeTarget + ',' + ms);
+        showTimeOffset(ms, skipField);
+        refreshNudgeReadout();
+    }
+
+    function onTimeOffsetMs() {
+        var ms = parseFloat(document.getElementById('timeOffset').value);
+        if (!isNaN(ms)) { applyTimeOffset(ms, 'ms'); }
+    }
+
+    function onTimeOffsetFrames() {
+        var frames = parseFloat(document.getElementById('timeOffsetFrames').value);
+        if (!isNaN(frames)) { applyTimeOffset(frames * 1000 / SOURCE_FPS, 'frames'); }
+    }
+
+    function currentTimeOffsetMs() {
+        return parseFloat(document.getElementById('timeOffset').value) || 0;
+    }
+
+    function nudgeTimeOffsetMs(deltaMs) {
+        applyTimeOffset(currentTimeOffsetMs() + deltaMs);
+    }
+
+    function nudgeTimeOffsetFrames(deltaFrames) {
+        applyTimeOffset(currentTimeOffsetMs() + deltaFrames * 1000 / SOURCE_FPS);
+    }
+
+    function setStep(id, value) {
+        document.getElementById(id).value = value;
+    }
+
+    // Open Brush applies a nudge on its next frame, so read back shortly afterwards.
+    function refreshNudgeReadout() {
+        setTimeout(updateSpatialReadouts, 150);
+    }
+
+    function updateSpatialReadouts() {
+        document.getElementById('nudgeReadout').textContent =
+            sendCommand('query.postprod.offset.spatial.readout=' + nudgeTarget);
+        // Keep the advanced field showing the target's own offset, in step with nudges
+        // (unless it's being edited).
+        var directField = document.getElementById('spatialDirect');
+        if (document.activeElement !== directField) {
+            var own = parseTrTransform(sendCommand(nudgeTarget < 0
+                ? 'query.postprod.offset.spatial.global'
+                : 'query.postprod.offset.spatial.layer.raw=' + nudgeTarget));
+            if (own) { directField.value = own; }
+        }
+        for (var i = 0; i < LAYER_COUNT; i++) {
+            document.getElementById('layerSpatialReadout' + i).textContent =
+                sendCommand('query.postprod.offset.spatial.readout=' + i);
+            var layerMs = parseFloat(sendCommand('query.postprod.offset.time.layer.raw=' + i)) || 0;
+            document.getElementById('layerTimeReadout' + i).textContent = layerMs === 0 ? 'none'
+                : (layerMs > 0 ? '+' : '') + layerMs + ' ms (' + (layerMs * SOURCE_FPS / 1000).toFixed(2) + ' f)';
+        }
+    }
+
+    document.addEventListener('keydown', function (e) {
+        var tag = (document.activeElement && document.activeElement.tagName) || '';
+        if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') { return; }
+        if (exportLocked) { return; }
+        var handled = true;
+        switch (e.key) {
+            case 'ArrowUp': nudge(1, 0, 0); break;
+            case 'ArrowDown': nudge(-1, 0, 0); break;
+            case 'ArrowLeft': nudge(0, -1, 0); break;
+            case 'ArrowRight': nudge(0, 1, 0); break;
+            case 'q': case 'Q': nudge(0, 0, -1); break;
+            case 'e': case 'E': nudge(0, 0, 1); break;
+            case 'j': case 'J': shuttle(-1); break;
+            case 'k': case 'K': pauseSketch(); break;
+            case 'l': case 'L': shuttle(1); break;
+            default: handled = false;
+        }
+        if (handled) { e.preventDefault(); }
+    });
+
+    function seekAndSync(command) {
+        sketchLoaded = true;
+        sendCommand(command);
+        setTimeout(syncScrubFromServer, 150);
+    }
+
+    function syncScrubFromServer() {
+        var ms = parseFloat(sendCommand('query.sketch.currenttime'));
+        if (!(ms >= 0 && ms <= SANE_SKETCH_TIME_MAX_MS)) { return; }
+        document.getElementById('scrub').value = ms;
+        document.getElementById('scrubMs').value = ms.toFixed(0);
+    }
+
+    // Preview toggles: each button sends its command; which one is highlighted always
+    // comes from Open Brush (query.postprod.preview.settings), never from the click.
+    document.querySelectorAll('.seg[data-key] button').forEach(function (button) {
+        button.onclick = function () {
+            sendCommand(button.dataset.cmd);
+            setTimeout(refreshSettings, 150);
+        };
+    });
+
+    function refreshSettings() {
+        var settings = {};
+        sendCommand('query.postprod.preview.settings').split(' ').forEach(function (pair) {
+            var kv = pair.split('=');
+            if (kv.length === 2) { settings[kv[0]] = kv[1]; }
+        });
+        document.querySelectorAll('.seg[data-key]').forEach(function (seg) {
+            var value = settings[seg.dataset.key];
+            seg.querySelectorAll('button').forEach(function (button) {
+                button.className = button.dataset.value === value ? 'active' : '';
+            });
+        });
+    }
+
+    // Playback runs inside Open Brush (postprod.preview.shuttle): the page only says
+    // the rate, so there is no request loop to fall behind.
+    function shuttle(direction) {
+        sketchLoaded = true;
+        var speed = parseFloat(document.getElementById('shuttleSpeed').value);
+        sendCommand('postprod.preview.shuttle=' + (direction * speed));
+    }
+
+    function playSketch() {
+        sketchLoaded = true;
+        sendCommand('postprod.preview.shuttle=1');
+    }
+
+    function pauseSketch() {
+        sendCommand('postprod.preview.shuttle=0');
+        setTimeout(syncScrubFromServer, 150);
+    }
+
+    // The sketch's layers, from Open Brush (query.postprod.layers.names, one name per
+    // line); the table rows and alignment targets are rebuilt whenever the list changes.
+    var layerNames = [];
+    var LAYER_COUNT = 0;
+    // Beyond this many layers the alignment target is a dropdown instead of buttons.
+    var MAX_TARGET_BUTTONS = 6;
+
+    function layerLabel(i) {
+        return layerNames[i] || ('Layer ' + i);
+    }
+
+    function escapeHtml(s) {
+        return s.replace(/[&<>"]/g, function (c) {
+            return {'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;'}[c];
+        });
+    }
+
+    function refreshLayers() {
+        var text = sendCommand('query.postprod.layers.names');
+        var names = text ? text.split('\n') : [];
+        if (names.join('\n') === layerNames.join('\n')) { return; }
+        layerNames = names;
+        LAYER_COUNT = names.length;
+        buildLayerRows();
+        buildTargets();
+        setNudgeTarget(nudgeTarget < LAYER_COUNT ? nudgeTarget : -1);
+        syncLayerVisibility();
+    }
+
+    function buildLayerRows() {
+        var body = document.getElementById('layerRows');
+        body.innerHTML = '';
+        for (var i = 0; i < LAYER_COUNT; i++) {
+            var row = document.createElement('tr');
+            row.id = 'layerRow' + i;
+            row.innerHTML =
+                '<td>' + escapeHtml(layerLabel(i)) + '</td>' +
+                '<td><input type="checkbox" id="layerVisible' + i + '" checked onchange="setLayerVisible(' + i + ', this.checked)"></td>' +
+                '<td><button onclick="soloLayer(' + i + ')">Solo</button></td>' +
+                '<td class="readout" id="layerTimeReadout' + i + '">none</td>' +
+                '<td class="readout" id="layerSpatialReadout' + i + '">no offset</td>' +
+                '<td><button onclick="setNudgeTarget(' + i + ')">Align</button></td>';
+            body.appendChild(row);
+        }
+    }
+
+    // Visibility, read back after a load from query.postprod.layers.visible.
+    function setLayerVisible(layer, visible) {
+        document.getElementById('layerVisible' + layer).checked = visible;
+        sendCommand((visible ? 'layer.show=' : 'layer.hide=') + layer);
+    }
+
+    function soloLayer(layer) {
+        for (var i = 0; i < LAYER_COUNT; i++) { setLayerVisible(i, i === layer); }
+    }
+
+    function showAllLayers() {
+        for (var i = 0; i < LAYER_COUNT; i++) { setLayerVisible(i, true); }
+    }
+
+    // Spatial nudge target: -1 = global (whole sketch), 0..N-1 = a layer.
+    var nudgeTarget = -1;
+
+    function buildTargets() {
+        var seg = document.getElementById('targetSeg');
+        var html;
+        if (LAYER_COUNT <= MAX_TARGET_BUTTONS) {
+            html = '<button id="target-1" onclick="setNudgeTarget(-1)">Global</button>';
+            for (var i = 0; i < LAYER_COUNT; i++) {
+                html += '<button id="target' + i + '" onclick="setNudgeTarget(' + i + ')">' +
+                    escapeHtml(layerLabel(i)) + '</button>';
+            }
+        } else {
+            html = '<select id="targetSelect" onchange="setNudgeTarget(parseInt(this.value, 10))">' +
+                '<option value="-1">Global</option>';
+            for (var j = 0; j < LAYER_COUNT; j++) {
+                html += '<option value="' + j + '">' + escapeHtml(layerLabel(j)) + '</option>';
+            }
+            html += '</select>';
+        }
+        seg.innerHTML = html;
+    }
+
+    function setNudgeTarget(target) {
+        nudgeTarget = target;
+        var select = document.getElementById('targetSelect');
+        if (select) { select.value = String(target); }
+        for (var i = -1; i < LAYER_COUNT; i++) {
+            var button = document.getElementById('target' + i);
+            if (button) { button.className = i === target ? 'active' : ''; }
+            if (i >= 0) { document.getElementById('layerRow' + i).className = i === target ? 'target' : ''; }
+        }
+        document.getElementById('nudgeTargetName').textContent = target < 0 ? 'Global' : layerLabel(target);
+        document.getElementById('directTargetName').textContent =
+            target < 0 ? 'the global' : layerLabel(target) + "'s";
+        refreshTimeOffset();
+        refreshNudgeReadout();
+    }
+
+    // Sets the target's own spatial offset (for a layer, on top of the global one).
+    function setSpatialDirect() {
+        var value = document.getElementById('spatialDirect').value;
+        sendCommand(nudgeTarget < 0
+            ? 'postprod.offset.spatial.global=' + value
+            : 'postprod.offset.spatial.layer=' + nudgeTarget + ',' + value);
+        refreshNudgeReadout();
+    }
+
+    function goToVideoFrame() {
+        lastUserInteraction = Date.now();
+        seekAndSync('postprod.preview.videoframe=' + document.getElementById('setVideoFrame').value);
+    }
+
+    // Defense in depth against Open Brush's internal "fully loaded" sentinel
+    // (App.Instance.CurrentSketchTime = float.MaxValue) ever reaching the UI - the
+    // server now clamps this too (PostProductionPreviewController.Update), but a
+    // huge/garbage value here must never be written into an input field, since a
+    // browser or automation tool firing a change event on it would round-trip the
+    // garbage straight back into sketch.currenttime.
+    var SANE_SKETCH_TIME_MAX_MS = 24 * 60 * 60 * 1000; // 24h - generous, not a real bound
+
+    // The video frame the preview is on, from the last status poll.
+    var lastVideoFrame = null;
+
+    function setRangeFromPlayhead(which) {
+        if (lastVideoFrame === null) { alert('Load a sketch and move to a frame first.'); return; }
+        sendCommand('postprod.crop.' + which + '=' + lastVideoFrame);
+        refreshRange();
+    }
+
+    // Keeps the export range fields in step with Open Brush (also after API changes), but
+    // never overwrites a field while it is being typed in.
+    function refreshRange() {
+        var start = sendCommand('query.postprod.crop.start');
+        var end = sendCommand('query.postprod.crop.end');
+        var startField = document.getElementById('cropStart');
+        var endField = document.getElementById('cropEnd');
+        if (document.activeElement !== startField) { startField.value = start; }
+        if (document.activeElement !== endField) { endField.value = end; }
+        var s = parseInt(start, 10), e = parseInt(end, 10);
+        var text = 'No range set.';
+        if (!isNaN(s) && !isNaN(e)) {
+            var frames = e - s + 1;
+            text = frames > 0
+                ? frames.toLocaleString() + ' frames (' + (frames / SOURCE_FPS).toFixed(2) + ' s at ' + SOURCE_FPS + ' fps).'
+                : 'End is before start.';
+        }
+        document.getElementById('rangeLength').textContent = text;
+    }
+
+    function startExport() {
+        sendCommand('postprod.export.start=' + document.getElementById('exportFormat').value);
+        setTimeout(pollExport, 300);
+    }
+
+    // While exporting, Open Brush refuses anything that would change what is rendered; the
+    // page greys those controls out too (Cancel and Show in folder stay usable).
+    var exportLocked = false;
+
+    function setExportLock(locked) {
+        if (locked === exportLocked) { return; }
+        exportLocked = locked;
+        document.getElementById('exportBanner').style.display = locked ? '' : 'none';
+        document.querySelectorAll('.container input, .container button, .container select').forEach(function (el) {
+            if (!el.classList.contains('keep')) { el.disabled = locked; }
+        });
+    }
+
+    // query.postprod.export.status: a line of key=value pairs, then a line for people.
+    function pollExport() {
+        var lines = sendCommand('query.postprod.export.status').split('\n');
+        var fields = {};
+        lines[0].split(' ').forEach(function (pair) {
+            var kv = pair.split('=');
+            if (kv.length === 2) { fields[kv[0]] = kv[1]; }
+        });
+        setExportLock(fields.state === 'Running');
+        var total = parseFloat(fields.total) || 0;
+        var bar = document.getElementById('exportProgress');
+        bar.max = total > 0 ? total : 1;
+        bar.value = parseFloat(fields.done) || 0;
+        document.getElementById('exportStatus').textContent = lines.slice(1).join('\n') || '(no export yet)';
+    }
+
+    function pollStatus() {
+        followServerLoads();
+        refreshLayers();
+        refreshSettings();
+        refreshRange();
+        pollExport();
+        var sketchTimeMsRaw = parseFloat(sendCommand('query.sketch.currenttime')) || 0;
+        var sketchTimeMs = (sketchTimeMsRaw >= 0 && sketchTimeMsRaw <= SANE_SKETCH_TIME_MAX_MS)
+            ? sketchTimeMsRaw : 0;
+        var offsetMs = parseFloat(sendCommand('query.postprod.offset.time.global')) || 0;
+
+        // Mirrors PostProductionSettings.SketchTimeToC006Frame exactly:
+        // videoTimeMs = sketchTimeMs + offsetMs, frame = round(videoTimeMs/1000*fps).
+        var videoTimeMs = sketchTimeMs + offsetMs;
+        var videoFrame = Math.round(videoTimeMs / 1000 * SOURCE_FPS);
+        // Before a sketch is loaded the sketch clock is just time since Open Brush started,
+        // so these would tick along meaninglessly - same guard as the slider.
+        lastVideoFrame = sketchLoaded ? videoFrame : null;
+        document.getElementById('videoTimeMs').textContent = sketchLoaded ? videoTimeMs.toFixed(0) : '-';
+        var frameField = document.getElementById('setVideoFrame');
+        if (document.activeElement !== frameField) { frameField.value = sketchLoaded ? videoFrame : ''; }
+        document.getElementById('barSketch').textContent = document.getElementById('sketchName').value || '-';
+        document.getElementById('barClip').textContent = document.getElementById('clipDir').value || '-';
+
+        // Only overwrite the scrub controls with the live server value once a sketch
+        // has actually been loaded, and if the user hasn't touched them recently -
+        // otherwise this fights active dragging/typing.
+        if (sketchLoaded && Date.now() - lastUserInteraction > USER_INTERACTION_QUIET_MS) {
+            document.getElementById('scrub').value = sketchTimeMs;
+            document.getElementById('scrubMs').value = sketchTimeMs.toFixed(0);
+        }
+
+        var lines = [
+            'sketchTime: ' + sketchTimeMs.toFixed(0) + ' ms',
+            'clip:       ' + sendCommand('query.postprod.clip.status'),
+            'plate:      ' + sendCommand('query.postprod.plate.status'),
+            'preview:    ' + sendCommand('query.postprod.preview.status'),
+            'autoplate:  ' + sendCommand('query.postprod.preview.autoplate.status'),
+            'cgcapture:  ' + sendCommand('query.postprod.preview.cgcapture.status'),
+            'livecg:     ' + sendCommand('query.postprod.preview.livecg.status'),
+            'fastplates: ' + sendCommand('query.postprod.preview.fastplates.status'),
+            'lens:       ' + sendCommand('query.postprod.lens.status'),
+            'alignment:  global ' + sendCommand('query.postprod.offset.spatial.readout=-1'),
+            'composite:  ' + sendCommand('query.postprod.preview.composite.status'),
+            'timeoffset: ' + offsetMs,
+            'crop:       start=' + (sendCommand('query.postprod.crop.start') || '(none)') +
+                ' end=' + (sendCommand('query.postprod.crop.end') || '(none)'),
+            'lastSave:   ' + sendCommand('query.postprod.metadata.save.status'),
+        ];
+        document.getElementById('statusBox').textContent = connected
+            ? lines.join('\n')
+            : 'Open Brush not running (start Play mode, then Load a sketch)';
+    }
+
+    // Which sections are open is remembered in this browser only (a convenience).
+    document.querySelectorAll('.container > details').forEach(function (section) {
+        try {
+            var saved = localStorage.getItem('postprod.open.' + section.id);
+            if (saved !== null) { section.open = saved === '1'; }
+        } catch (e) { }
+        section.addEventListener('toggle', function () {
+            try { localStorage.setItem('postprod.open.' + section.id, section.open ? '1' : '0'); } catch (e) { }
+        });
+    });
+
+    setInterval(pollStatus, 1000);
+    pollStatus();
+    // Fields fill in only once a sketch is loaded (followServerLoads, run by pollStatus
+    // below) or a clip is picked; with nothing loaded they stay blank.
+    SOURCE_FPS = parseFloat(sendCommand('query.postprod.clip.fps')) || SOURCE_FPS;
+    setNudgeTarget(-1);
+</script>
+
+</body>
+</html>

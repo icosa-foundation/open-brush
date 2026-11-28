@@ -10,6 +10,7 @@
   "Video": {
   },
   "Flags": {
+    "PhotonUdpPorts": "Default",
   },
   "Export": {
   },

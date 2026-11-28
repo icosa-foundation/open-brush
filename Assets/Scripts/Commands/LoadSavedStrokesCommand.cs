@@ -47,6 +47,7 @@ namespace TiltBrush
             private readonly Vector3 m_CommandMidpoint;
 
             private List<Stroke> m_LoadedStrokes;
+            private StrokeTimeSessionMetadata[] m_ImportedStrokeTimeSessions;
             private SketchGroupTag m_Group;
             private bool m_LoadAttempted;
             private bool m_LoadSucceeded;
@@ -56,6 +57,8 @@ namespace TiltBrush
 
             protected override void OnDispose()
             {
+                SketchMemoryScript.m_Instance.RemoveStrokeTimeSessions(
+                    m_ImportedStrokeTimeSessions);
                 if (m_LoadedStrokes != null)
                 {
                     foreach (var stroke in m_LoadedStrokes)
@@ -84,7 +87,8 @@ namespace TiltBrush
                         m_SavedStrokeFile.FileInfo,
                         bAdditive: true,
                         m_TargetLayerIndex,
-                        out m_LoadedStrokes);
+                        out m_LoadedStrokes,
+                        out m_ImportedStrokeTimeSessions);
 
                     if (!m_LoadSucceeded)
                     {
@@ -120,6 +124,9 @@ namespace TiltBrush
                 else if (m_LoadSucceeded && !m_StrokesVisible)
                 {
                     // Redo after undo
+                    SketchMemoryScript.m_Instance.RestoreStrokeTimeSessions(
+                        m_ImportedStrokeTimeSessions);
+
                     foreach (var stroke in m_LoadedStrokes)
                     {
                         stroke.Hide(false);
@@ -156,6 +163,8 @@ namespace TiltBrush
                 }
 
                 // The selection child has already been undone by the base class.
+                SketchMemoryScript.m_Instance.RemoveStrokeTimeSessions(
+                    m_ImportedStrokeTimeSessions);
 
                 foreach (var stroke in m_LoadedStrokes)
                 {

@@ -77,7 +77,9 @@ namespace OpenBrush.Multiplayer
         public bool @private;
         public int maxPlayers;
         public bool silentRoom;
+        public bool voiceDisabled;
         public bool viewOnlyRoom;
+        public bool liveStrokeStreaming;
     }
 
     [System.Serializable]
@@ -89,6 +91,7 @@ namespace OpenBrush.Multiplayer
         public int maxPlayers;
         public bool silentRoom;
         public bool viewOnlyRoom;
+        public bool liveStrokeStreaming;
     }
 
 

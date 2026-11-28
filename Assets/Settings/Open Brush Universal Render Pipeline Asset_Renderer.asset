@@ -176,5 +176,6 @@ MonoBehaviour:
   m_Name: Open Brush Capture Effects
   m_EditorClassIdentifier: Assembly-CSharp::TiltBrush.UrpCaptureEffectsRendererFeature
   m_Active: 1
+  m_PreviewShader: {fileID: 4800000, guid: e5d1f49832ae4b46a66fea2cfb830698, type: 3}
   m_VignetteShader: {fileID: 4800000, guid: 1927722e19c340ccb0b4df0f890d424a, type: 3}
   m_TiltShiftShader: {fileID: 4800000, guid: ee8b0fb8af3b4b618299c9d7a073026d, type: 3}

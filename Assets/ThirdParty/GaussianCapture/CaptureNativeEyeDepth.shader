@@ -2,6 +2,7 @@ Shader "Hidden/CaptureNativeEyeDepth"
 {
     Properties
     {
+        _EncodePostProductionDepth ("Encode post-production depth", Float) = 0
         _CaptureClipPlanes ("Capture clip planes", Vector) = (0.1,1000,0,1)
     }
     SubShader
@@ -20,6 +21,7 @@ Shader "Hidden/CaptureNativeEyeDepth"
             #include "UnityCG.cginc"
             CBUFFER_START(UnityPerMaterial)
             float4 _CaptureClipPlanes;
+            float _EncodePostProductionDepth;
             CBUFFER_END
             #if defined(CAPTURE_DEPTH_MSAA)
             Texture2DMS<float> _CaptureNativeDepth;
@@ -47,7 +49,7 @@ Shader "Hidden/CaptureNativeEyeDepth"
                 return output;
             }
 
-            float frag(v2f input) : SV_Target
+            float4 frag(v2f input) : SV_Target
             {
                 #if defined(CAPTURE_DEPTH_MSAA)
                 uint width, height, samples;
@@ -66,7 +68,13 @@ Shader "Hidden/CaptureNativeEyeDepth"
                 float nearPlane = _CaptureClipPlanes.x;
                 float farPlane = _CaptureClipPlanes.y;
                 float perspectiveDepth = nearPlane * farPlane / lerp(farPlane, nearPlane, depth);
-                return lerp(perspectiveDepth, lerp(nearPlane, farPlane, depth), _CaptureClipPlanes.z);
+                float eyeDepth = lerp(perspectiveDepth, lerp(nearPlane, farPlane, depth), _CaptureClipPlanes.z);
+                if (_EncodePostProductionDepth > 0.5)
+                {
+                    if (depth >= 1.0) return float4(0.5, 0.5, 1.0, 0.0);
+                    return float4(0.5, 0.5, EncodeFloatRG(min(eyeDepth / farPlane, 0.999999)));
+                }
+                return eyeDepth;
             }
             ENDHLSL
         }

@@ -1115,6 +1115,230 @@ namespace TiltBrush
             return bytes;
         }
 
+        // ------------------------------------------------------------------
+        // Calibrated-camera support, for matching a real physical camera when
+        // compositing CG over live-action footage.
+        //
+        // The normal path only exposes a single vertical fieldOfView, which
+        // can't express a non-centred principal point (cx, cy) or non-square
+        // pixels (fx != fy) - real calibrated lenses have both. Unity's
+        // physical-camera lensShift could cover the principal point but not
+        // fx != fy, and uses its own normalisation convention. Building the
+        // projection matrix straight from OpenCV-style intrinsics expresses
+        // all four exactly, with no convention to convert.
+        // ------------------------------------------------------------------
+
+        private static bool s_UseCalibratedProjection;
+        private static float s_Fx, s_Fy, s_Cx, s_Cy, s_RefWidth, s_RefHeight;
+
+        private static bool s_UseCalibratedClip;
+        private static float s_NearClip, s_FarClip;
+
+        /// Written on the main thread whenever a calibrated projection is
+        /// applied, so query.camera.projection can report it from the HTTP
+        /// listener thread without touching Unity objects off-thread.
+        /// Same approach as ApiMainThreadObserver.
+        public static volatile string s_ProjectionReportJson = "{\"calibrated\":false}";
+
+        /// Where the capture camera was for the most recent calibrated snapshot, in world space.
+        /// A camera is pose AND projection: reporting only intrinsics can't distinguish "camera
+        /// set up correctly" from "camera aimed at empty space", which is exactly the failure
+        /// that cost a rebuild to diagnose. Null until the first capture.
+        public static volatile string s_LastCaptureExtrinsicsJson = "null";
+
+        // Editor Play sessions keep static state (no domain reload); start uncalibrated.
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetCalibratedCameraState() => ClearCalibratedCamera();
+
+        // Back to Open Brush's own camera projection and clipping (the post-production clip set
+        // these; New Sketch ends that session).
+        public static void ClearCalibratedCamera()
+        {
+            s_UseCalibratedProjection = false;
+            s_Fx = s_Fy = s_Cx = s_Cy = s_RefWidth = s_RefHeight = 0;
+            s_UseCalibratedClip = false;
+            s_NearClip = s_FarClip = 0;
+            s_ProjectionReportJson = "{\"calibrated\":false}";
+            s_LastCaptureExtrinsicsJson = "null";
+        }
+
+        public static void SetCalibratedIntrinsics(
+            float fx, float fy, float cx, float cy, float refWidth, float refHeight)
+        {
+            s_Fx = fx; s_Fy = fy; s_Cx = cx; s_Cy = cy;
+            s_RefWidth = refWidth; s_RefHeight = refHeight;
+            s_UseCalibratedProjection = true;
+            // Report straight away, at the calibrated resolution, so a UI can sanity-check
+            // the numbers without having to render first. Refreshed with the real render
+            // resolution after each snapshot.
+            RefreshProjectionReport(
+                fx, fy, cx, cy, refWidth, refHeight,
+                s_UseCalibratedClip ? s_NearClip : float.NaN,
+                s_UseCalibratedClip ? s_FarClip : float.NaN,
+                "configured");
+        }
+
+        /// Human-readable derivation of what the intrinsics actually mean, for
+        /// sanity-checking against a real camera. Field of view and lens shift are
+        /// reported in Blender's own conventions so they can be compared directly
+        /// against a Blender camera's values.
+        /// Clip may be NaN when it hasn't been set yet, in which case the depth row
+        /// of the matrix isn't meaningful and is reported as null.
+        private static void RefreshProjectionReport(
+            float fx, float fy, float cx, float cy, float w, float h,
+            float near, float far, string source)
+        {
+            float vFovDeg = 2f * Mathf.Atan(h / (2f * fy)) * Mathf.Rad2Deg;
+            float hFovDeg = 2f * Mathf.Atan(w / (2f * fx)) * Mathf.Rad2Deg;
+            // Blender normalises lens shift by the larger image dimension, and flips
+            // the sign of x relative to a raw principal-point offset.
+            float maxDim = Mathf.Max(w, h);
+            float shiftX = -(cx - w / 2f) / maxDim;
+            float shiftY = (cy - h / 2f) / maxDim;
+
+            bool clipKnown = !float.IsNaN(near) && !float.IsNaN(far);
+            string matrixJson = clipKnown
+                ? MatrixToJson(BuildProjectionFromIntrinsics(fx, fy, cx, cy, w, h, near, far))
+                : "null";
+
+            s_ProjectionReportJson =
+                "{\"calibrated\":true," +
+                $"\"source\":\"{source}\"," +
+                $"\"width\":{w:F0},\"height\":{h:F0}," +
+                $"\"fx\":{fx:F6},\"fy\":{fy:F6},\"cx\":{cx:F6},\"cy\":{cy:F6}," +
+                $"\"verticalFovDegrees\":{vFovDeg:F6},\"horizontalFovDegrees\":{hFovDeg:F6}," +
+                $"\"blenderShiftX\":{shiftX:F6},\"blenderShiftY\":{shiftY:F6}," +
+                (clipKnown
+                    ? $"\"nearClipUnits\":{near:F6},\"farClipUnits\":{far:F6}," +
+                      $"\"nearClipMetres\":{near * App.UNITS_TO_METERS:F6}," +
+                      $"\"farClipMetres\":{far * App.UNITS_TO_METERS:F6},"
+                    : "\"nearClipUnits\":null,\"farClipUnits\":null," +
+                      "\"nearClipMetres\":null,\"farClipMetres\":null,") +
+                $"\"projectionMatrix\":{matrixJson}}}";
+        }
+
+        public static void ClearCalibratedIntrinsics()
+        {
+            s_UseCalibratedProjection = false;
+            s_ProjectionReportJson = "{\"calibrated\":false}";
+        }
+
+        // Raw getters for the post-production preview's persistence (stage 8, added
+        // 2026-09-08) - values are stored exactly as passed to
+        // SetCalibratedIntrinsics/SetCalibratedClip (no unit conversion), so these
+        // round-trip directly with the camera.intrinsics/camera.clip API commands.
+        public static bool UseCalibratedProjection => s_UseCalibratedProjection;
+        public static bool UseCalibratedClip => s_UseCalibratedClip;
+        public static float CalibratedFx => s_Fx;
+        public static float CalibratedFy => s_Fy;
+        public static float CalibratedCx => s_Cx;
+        public static float CalibratedCy => s_Cy;
+        public static float CalibratedRefWidth => s_RefWidth;
+        public static float CalibratedRefHeight => s_RefHeight;
+        public static float CalibratedNearClip => s_NearClip;
+        public static float CalibratedFarClip => s_FarClip;
+
+        /// Clip planes in Open Brush units (1 metre = App.METERS_TO_UNITS = 10 units),
+        /// so a real camera's metric near/far need scaling by 10 before being set here.
+        public static void SetCalibratedClip(float near, float far)
+        {
+            s_NearClip = near; s_FarClip = far;
+            s_UseCalibratedClip = true;
+            // Clip feeds the projection's depth row, so the report is now stale.
+            if (s_UseCalibratedProjection)
+            {
+                RefreshProjectionReport(
+                    s_Fx, s_Fy, s_Cx, s_Cy, s_RefWidth, s_RefHeight, near, far, "configured");
+            }
+        }
+
+        public static void ClearCalibratedClip()
+        {
+            s_UseCalibratedClip = false;
+        }
+
+        /// Applies the currently-configured calibrated intrinsics/clip (see
+        /// SetCalibratedIntrinsics/SetCalibratedClip) to an arbitrary camera - for
+        /// the post-production live preview (POSTPROD_PREVIEW_PLAN.md, stage 6),
+        /// which needs to drive whatever camera is currently painting the desktop
+        /// window rather than the snapshot capture rig. Same maths TakeSnapshot
+        /// uses internally, factored out here rather than refactoring that
+        /// existing, already-proven path, to avoid any risk of regressing it.
+        /// A no-op if no calibrated intrinsics are configured.
+        public static void ApplyCalibratedProjectionToCamera(Camera cam)
+        {
+            if (!s_UseCalibratedProjection) { return; }
+
+            int width = cam.pixelWidth;
+            int height = cam.pixelHeight;
+            float sx = width / s_RefWidth;
+            float sy = height / s_RefHeight;
+            float fx = s_Fx * sx, fy = s_Fy * sy;
+            float cx = s_Cx * sx, cy = s_Cy * sy;
+
+            if (s_UseCalibratedClip)
+            {
+                cam.nearClipPlane = s_NearClip;
+                cam.farClipPlane = s_FarClip;
+            }
+
+            float vFovDeg = 2f * Mathf.Atan(height / (2f * fy)) * Mathf.Rad2Deg;
+            cam.fieldOfView = vFovDeg;
+
+            // Assign the projection last - setting fieldOfView can invalidate an
+            // explicitly-assigned projection matrix.
+            cam.projectionMatrix = BuildProjectionFromIntrinsics(
+                fx, fy, cx, cy, width, height, cam.nearClipPlane, cam.farClipPlane);
+
+            RefreshProjectionReport(
+                fx, fy, cx, cy, width, height, cam.nearClipPlane, cam.farClipPlane, "livePreview");
+        }
+
+        /// Restores a camera to Unity's normal FOV-driven projection, undoing
+        /// ApplyCalibratedProjectionToCamera.
+        public static void ClearCalibratedProjectionFromCamera(Camera cam)
+        {
+            cam.ResetProjectionMatrix();
+        }
+
+        /// OpenCV-style intrinsics -> OpenGL-convention projection matrix.
+        /// Unity wants the GL convention here (view space looking down -Z,
+        /// NDC y up) and converts to the platform's own convention itself.
+        /// The cx/cy terms carry the principal-point offset; the y row also
+        /// absorbs the OpenCV y-down to GL y-up flip.
+        public static Matrix4x4 BuildProjectionFromIntrinsics(
+            float fx, float fy, float cx, float cy, float w, float h, float near, float far)
+        {
+            var m = new Matrix4x4();
+            m[0, 0] = 2f * fx / w;
+            m[0, 2] = 1f - 2f * cx / w;
+            m[1, 1] = 2f * fy / h;
+            m[1, 2] = 2f * cy / h - 1f;
+            m[2, 2] = -(far + near) / (far - near);
+            m[2, 3] = -2f * far * near / (far - near);
+            m[3, 2] = -1f;
+            return m;
+        }
+
+        /// Row-major, so it reads the same way it's written in the maths above.
+        private static string MatrixToJson(Matrix4x4 m)
+        {
+            var sb = new System.Text.StringBuilder("[");
+            for (int row = 0; row < 4; row++)
+            {
+                if (row > 0) { sb.Append(","); }
+                sb.Append("[");
+                for (int col = 0; col < 4; col++)
+                {
+                    if (col > 0) { sb.Append(","); }
+                    sb.Append(m[row, col].ToString("F8"));
+                }
+                sb.Append("]");
+            }
+            sb.Append("]");
+            return sb.ToString();
+        }
+
         public static void TakeSnapshot(
             TrTransform tr,
             string filename,
@@ -1126,6 +1350,37 @@ namespace TiltBrush
             bool renderNormals = false,
             bool includePostProcessing = false)
         {
+            CaptureSnapshot(tr, filename, width, height, superSampling, removeBackground, renderDepth, renderNormals, includePostProcessing, useCalibratedCamera: false);
+        }
+
+        // Explicit calibrated capture; ordinary callers never inherit global calibration state.
+        public static void TakeCalibratedSnapshot(
+            TrTransform tr,
+            string filename,
+            int width,
+            int height,
+            float superSampling = 1f,
+            bool removeBackground = false,
+            bool renderDepth = false,
+            bool renderNormals = false,
+            bool includePostProcessing = false)
+        {
+            CaptureSnapshot(tr, filename, width, height, superSampling, removeBackground, renderDepth, renderNormals, includePostProcessing, useCalibratedCamera: true);
+        }
+
+        private static void CaptureSnapshot(
+            TrTransform tr,
+            string filename,
+            int width,
+            int height,
+            float superSampling,
+            bool removeBackground,
+            bool renderDepth,
+            bool renderNormals,
+            bool includePostProcessing,
+            bool useCalibratedCamera)
+        {
+
             bool saveAsPng;
             if (filename.ToLower().EndsWith(".jpg") || filename.ToLower().EndsWith(".jpeg"))
             {
@@ -1141,24 +1396,107 @@ namespace TiltBrush
                 filename += ".jpg";
             }
             string path = Path.Join(App.SnapshotPath(), filename);
+
             MultiCamTool cam = SketchSurfacePanel.m_Instance.GetToolOfType(BaseTool.ToolType.MultiCamTool) as MultiCamTool;
+
 
             if (cam != null)
             {
                 var rig = SketchControlsScript.m_Instance.MultiCamCaptureRig;
+
                 App.Scene.AsScene[rig.gameObject.transform] = tr;
                 var rMgr = rig.ManagerFromStyle(MultiCamStyle.Snapshot);
+
                 var initialState = rig.gameObject.activeSelf;
                 RenderTexture tmp = null;
                 RenderWrapper wrapper = null;
                 float ssaaRestore = 0;
+                Camera calibratedCam = null;
+                float fovRestore = 0;
+                float nearRestore = 0, farRestore = 0;
                 try
                 {
                     rig.gameObject.SetActive(true);
+
                     tmp = rMgr.CreateTemporaryTargetForSave(width, height);
+
                     wrapper = rMgr.gameObject.GetComponent<RenderWrapper>();
+
                     ssaaRestore = wrapper.SuperSampling;
                     wrapper.SuperSampling = superSampling;
+
+                    // Applied around ALL passes so colour, depth and normals share one
+                    // projection - they get composited against each other later, so any
+                    // disagreement between them would be baked into the result.
+                    if (useCalibratedCamera && (s_UseCalibratedProjection || s_UseCalibratedClip))
+                    {
+                        calibratedCam = rMgr.LeftEye;
+                        fovRestore = calibratedCam.fieldOfView;
+                        nearRestore = calibratedCam.nearClipPlane;
+                        farRestore = calibratedCam.farClipPlane;
+
+                        // Clip planes go on first: the projection matrix below is built
+                        // from them, and the depth sidecar's near/far metres come from
+                        // them too.
+                        if (s_UseCalibratedClip)
+                        {
+                            calibratedCam.nearClipPlane = s_NearClip;
+                            calibratedCam.farClipPlane = s_FarClip;
+
+                        }
+                    }
+
+                    if (useCalibratedCamera && s_UseCalibratedProjection)
+                    {
+                        // Intrinsics are stored against the resolution they were
+                        // calibrated at; rescale to whatever we're actually rendering.
+                        float sx = width / s_RefWidth;
+                        float sy = height / s_RefHeight;
+                        float fx = s_Fx * sx, fy = s_Fy * sy;
+                        float cx = s_Cx * sx, cy = s_Cy * sy;
+
+                        // EncodeDepthCapture writes camera.fieldOfView into the depth
+                        // sidecar that the compositing step reads, so keep it consistent
+                        // with the projection we're about to install rather than leaving
+                        // a stale value behind.
+                        float vFovDeg = 2f * Mathf.Atan(height / (2f * fy)) * Mathf.Rad2Deg;
+                        calibratedCam.fieldOfView = vFovDeg;
+
+                        // Assign the projection last - setting fieldOfView can invalidate
+                        // an explicitly-assigned projection matrix.
+                        calibratedCam.projectionMatrix = BuildProjectionFromIntrinsics(
+                            fx, fy, cx, cy, width, height,
+                            calibratedCam.nearClipPlane, calibratedCam.farClipPlane);
+
+                        RefreshProjectionReport(
+                            fx, fy, cx, cy, width, height,
+                            calibratedCam.nearClipPlane, calibratedCam.farClipPlane,
+                            "lastRender");
+
+                    }
+
+                    // Record where the capture camera actually ended up, AFTER everything
+                    // that might have moved it. If something else is driving the rig (as
+                    // MultiCamTool does while it is the active tool) this is where it shows
+                    // up - the requested pose and the real one will disagree.
+                    if (useCalibratedCamera)
+                    {
+                        Transform camXf = rMgr.LeftEye.transform;
+                        Vector3 p = camXf.position;
+                        Quaternion q = camXf.rotation;
+                        Vector3 e = q.eulerAngles;
+                        Vector3 f = camXf.forward;
+                        s_LastCaptureExtrinsicsJson =
+                            "{" +
+                            $"\"worldPosition\":[{p.x:F6},{p.y:F6},{p.z:F6}]," +
+                            $"\"rotationQuaternion\":[{q.x:F6},{q.y:F6},{q.z:F6},{q.w:F6}]," +
+                            $"\"rotationEulerDegrees\":[{e.x:F4},{e.y:F4},{e.z:F4}]," +
+                            $"\"forward\":[{f.x:F6},{f.y:F6},{f.z:F6}]," +
+                            $"\"requestedPosition\":[{tr.translation.x:F6},{tr.translation.y:F6},{tr.translation.z:F6}]," +
+                            $"\"requestedRotation\":[{tr.rotation.x:F6},{tr.rotation.y:F6},{tr.rotation.z:F6},{tr.rotation.w:F6}]" +
+                            "}";
+
+                    }
 
                     bool watermarkEnabled = CameraConfig.Watermark;
                     bool postEffectsEnabled = CameraConfig.PostEffects;
@@ -1171,19 +1509,25 @@ namespace TiltBrush
 
                         if (renderDepth)
                         {
+
                             rMgr.RenderDepthToTexture(tmp);
+
                             var depthFiles = rMgr.EncodeDepthCapture(tmp);
+
                             SaveDepthCaptureFiles(path, depthFiles);
+
                         }
 
                         if (renderNormals)
                         {
+
                             rMgr.RenderDepthNormalToTexture(tmp);
                             var normalPath = $"{GetCaptureBasePath(path)}_normals.png";
                             using (var fs = new FileStream(normalPath, FileMode.Create))
                             {
                                 SaveNormals(fs, tmp);
                             }
+
                         }
                     }
                     finally
@@ -1193,14 +1537,15 @@ namespace TiltBrush
                         CameraConfig.PostEffects = postEffectsEnabled;
                     }
 
-                    rMgr.RenderToTexture(
-                        tmp,
-                        removeBackground: removeBackground,
+                    rMgr.RenderToTexture(tmp, removeBackground: removeBackground,
                         includePostProcessing: includePostProcessing);
+
                     using (var fs = new FileStream(path, FileMode.Create))
                     {
                         Save(fs, tmp, bSaveAsPng: saveAsPng, preserveAlpha: removeBackground);
                     }
+
+
                 }
                 finally
                 {
@@ -1208,12 +1553,23 @@ namespace TiltBrush
                     {
                         wrapper.SuperSampling = ssaaRestore;
                     }
+                    if (calibratedCam != null)
+                    {
+                        // ResetProjectionMatrix hands control back to Unity's own
+                        // fieldOfView-driven projection, so the normal in-app camera
+                        // isn't left with our calibrated one.
+                        calibratedCam.fieldOfView = fovRestore;
+                        calibratedCam.nearClipPlane = nearRestore;
+                        calibratedCam.farClipPlane = farRestore;
+                        calibratedCam.ResetProjectionMatrix();
+                    }
                     rig.gameObject.SetActive(initialState);
                     if (tmp != null)
                     {
                         RenderTexture.ReleaseTemporary(tmp);
                     }
                 }
+
             }
         }
     }

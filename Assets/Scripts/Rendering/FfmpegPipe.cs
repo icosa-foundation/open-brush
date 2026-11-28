@@ -85,6 +85,25 @@ namespace TiltBrush
         }
     }
 
+    // Raw packed video bytes, including 16-bit RGBA used by quality exports.
+    class BytesBytable : Bytable
+    {
+        private byte[] m_buffer;
+
+        public BytesBytable(byte[] buffer) { m_buffer = buffer; }
+        public override int Length => m_buffer.Length;
+        public override System.Array GetArray() => m_buffer;
+        public override void ToBytes(ref byte[] bytes) { bytes = m_buffer; }
+        public override void FromBytes(byte[] buf)
+        {
+            if (m_buffer == null || m_buffer.Length != buf.Length)
+            {
+                m_buffer = new byte[buf.Length];
+            }
+            System.Buffer.BlockCopy(buf, 0, m_buffer, 0, buf.Length);
+        }
+    }
+
     class FloatBytable : Bytable
     {
         private float[] m_buffer;
@@ -227,6 +246,7 @@ namespace TiltBrush
         private Bytable m_frame;
         // A ring buffer of potentially many audio or video frames, used for playback.
         RingBuffer<Bytable> m_framesOut;
+        private int m_rawVideoBytesPerPixel;
 
         private bool m_shouldBlock;
 
@@ -287,12 +307,18 @@ namespace TiltBrush
         }
 
         // Returns false if ffmpeg fails to start.
-        // Note that sampleRate is FPS for video and sample rate in Hz for audio
+        // Note that sampleRate is FPS for video and sample rate in Hz for audio.
+        // customArguments, if given, replaces the built-in ffmpeg command line entirely (the
+        // post-production export uses it for ProRes and for frame-exact decoding); source
+        // still decides the direction ("pipe:..." = writing frames to ffmpeg).
+        // rawVideoBytesPerPixel opts decoding into packed byte frames; zero retains Color32.
         public bool Start(string source, string outputFile, int width, int height, float sampleRate,
-                          bool blocking)
+                          bool blocking, string customArguments = null, int rawVideoBytesPerPixel = 0)
         {
+            m_rawVideoBytesPerPixel = rawVideoBytesPerPixel;
+            FailureMessage = null;
             m_outputFile = "";
-            if (!LaunchEncoder(source, outputFile, width, height, sampleRate, blocking))
+            if (!LaunchEncoder(source, outputFile, width, height, sampleRate, blocking, customArguments))
             {
                 // ffmpeg failed to launch
                 return false;
@@ -329,10 +355,10 @@ namespace TiltBrush
             {
                 m_dataWriter = null;
                 m_dataReader = new BinaryReader(m_encoderProc.StandardOutput.BaseStream);
+                m_framesOut = new RingBuffer<Bytable>(5);
                 m_dataReaderThread = new Thread(ReadFramesFromFfmpeg);
                 m_dataReaderThread.IsBackground = true;
                 m_dataReaderThread.Start();
-                m_framesOut = new RingBuffer<Bytable>(5);
             }
 
             m_shouldPause = false;
@@ -379,7 +405,7 @@ namespace TiltBrush
                                    int width,
                                    int height,
                                    float sampleRate,
-                                   bool offline)
+                                   bool offline, string customArguments = null)
         {
             string streamInput = @"-y -r {4} -f rawvideo -codec rawvideo -s {0}x{1} " +
                 @"-pixel_format rgba -i {2} ";
@@ -408,6 +434,10 @@ namespace TiltBrush
                 streamOutput = @"-an -f rawvideo -pix_fmt rgba ""{3}""";
                 isReading = true;
             }
+            if (customArguments != null)
+            {
+                isReading = !inputFile.StartsWith("pipe:");
+            }
 
 
             string ffmpegExe = GetFfmpegExe();
@@ -419,8 +449,8 @@ namespace TiltBrush
             m_encoderProc = new Process();
 
             m_encoderProc.StartInfo.FileName = Path.GetFullPath(ffmpegExe);
-            m_encoderProc.StartInfo.Arguments = System.String.Format(streamInput + outputArgs + streamOutput,
-                width, height, inputFile, outputFile, sampleRate);
+            m_encoderProc.StartInfo.Arguments = customArguments ?? System.String.Format(
+                streamInput + outputArgs + streamOutput, width, height, inputFile, outputFile, sampleRate);
 
             m_encoderProc.StartInfo.CreateNoWindow = true;
             m_encoderProc.StartInfo.UseShellExecute = false;
@@ -530,6 +560,10 @@ namespace TiltBrush
             m_dataReader = null;
         }
 
+        // Available after the process exits; no process is not a successful encode.
+        public int? ExitCode => m_encoderProc != null && m_encoderProc.HasExited
+            ? m_encoderProc.ExitCode : (int?)null;
+
         public bool WaitForEncoderExit(int milliseconds)
         {
             if (m_encoderProc == null)
@@ -564,6 +598,11 @@ namespace TiltBrush
                 // Assumption here is that it shouldn't take longer than five seconds to encode a single
                 // frame. If it takes longer we'll just start using up the buffer.
                 m_frameWritten.WaitOne(5 * 1000);
+                // Mark this frame unwritten before handing it over. Leaving that to the writer
+                // thread (it resets on waking) let a second call slip through before it woke and
+                // overwrite this frame, silently dropping it: 2 of 3,600 frames were lost that way
+                // in a post-production export (2026-10-24).
+                m_frameWritten.Reset();
             }
             Interlocked.Exchange(ref m_frame, buffer);
             m_frameReady.Set();
@@ -572,17 +611,14 @@ namespace TiltBrush
 
         public void GetFrame(ref Color32Bytable buffer)
         {
-            if (m_framesOut.IsEmpty)
-            {
-                buffer = null;
-            }
-            else
-            {
-                // The writer thread will never touch m_framesOut[0], therefore this should be thread safe.
-                // This is true as long as the writer never calls Enqueue with overwriteIfFull=true.
-                buffer = m_framesOut.Dequeue() as Color32Bytable;
-            }
+            Bytable frame = null;
+            GetFrame(ref frame);
+            buffer = frame as Color32Bytable;
+        }
 
+        public void GetFrame(ref Bytable buffer)
+        {
+            buffer = m_framesOut.IsEmpty ? null : m_framesOut.Dequeue();
             m_frameReady.Set();
         }
 
@@ -667,7 +703,13 @@ namespace TiltBrush
                         }
 
                         curFrame.ToBytes(ref buf);
-                        dataPipe.Write(buf);
+                        // In pieces: a single pipe write of a whole 4K frame (35MB) can fail
+                        // on Windows with error 1450, "insufficient system resources", which
+                        // killed a post-production export at frame 3 (2026-10-24).
+                        for (int offset = 0; offset < buf.Length; offset += kPipeWriteChunk)
+                        {
+                            dataPipe.Write(buf, offset, System.Math.Min(kPipeWriteChunk, buf.Length - offset));
+                        }
 
                         if (ReleaseFrame != null)
                         {
@@ -698,25 +740,40 @@ namespace TiltBrush
             }
             catch (System.Exception e)
             {
+                FailureMessage = $"{e.GetType().Name}: {e.Message}";
                 UnityEngine.Debug.LogWarning(m_outputFile);
                 UnityEngine.Debug.LogException(e);
             }
         }
 
+        private const int kPipeWriteChunk = 1 << 20;
+
+        // Set when the writer thread died on an error (e.g. ffmpeg exited or the pipe broke):
+        // frames queued after that go nowhere, so callers should stop rather than keep queuing.
+        public volatile string FailureMessage;
+        public bool HasFailed => FailureMessage != null ||
+            (m_encoderProc != null && m_encoderProc.HasExited && !m_shouldExit);
+
         private void ReadFramesFromFfmpeg()
         {
-            long PIXEL_SIZE_BYTES = System.Runtime.InteropServices.Marshal.SizeOf(typeof(Color32));
+            int pixelSizeBytes = m_rawVideoBytesPerPixel > 0 ? m_rawVideoBytesPerPixel : 4;
             // TODO: Use ffprobe instead of width/height, then w/h properties could be removed.
-            byte[] buf = new byte[Height * Width * PIXEL_SIZE_BYTES];
+            byte[] buf = new byte[checked(Height * Width * pixelSizeBytes)];
             System.IO.BinaryReader dataPipe = m_dataReader;
-            // Keep a local set of buffers to avoid garbage collection.
-            Bytable[] localRefs = new Bytable[m_framesOut.Capacity];
+            // Keep a local set of buffers to avoid garbage collection. Two more than the ring
+            // holds, so the frame a consumer has just dequeued (and may still be copying) isn't
+            // overwritten by the next one read: with exactly Capacity buffers, dequeuing from a
+            // full ring frees the oldest slot and the very next read refills that same buffer.
+            // Consumers must finish using a dequeued frame before requesting another one.
+            // The extra two buffers cost about 63 MiB for RGBA8 or 127 MiB for RGBA16 at 4K UHD.
+            Bytable[] localRefs = new Bytable[m_framesOut.Capacity + 2];
 
             // Init local refs.
             int lastLocalRef = 0;
             for (int i = 0; i < localRefs.Length; i++)
             {
-                localRefs[i] = new Color32Bytable(null);
+                localRefs[i] = m_rawVideoBytesPerPixel > 0
+                    ? (Bytable)new BytesBytable(null) : new Color32Bytable(null);
             }
 
             try

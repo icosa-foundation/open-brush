@@ -59,6 +59,7 @@ namespace TiltBrush
     public class ScenePlaybackByStrokeDistance : IScenePlayback
     {
         private IEnumerator<Timeslice> m_drawer;
+        private StrokePlaybackByDistance m_StrokePlayback;
 
         // Strokes drawn out of SketchMemoryScript.m_MemoryList
         private int m_MemoryObjectsDrawn;
@@ -134,6 +135,7 @@ namespace TiltBrush
             CanvasScript targetCanvas)
         {
             StrokePlaybackByDistance playback = new StrokePlaybackByDistance(this);
+            m_StrokePlayback = playback;
             foreach (var stroke in strokes)
             {
                 // When additively loading a sketch, deleted strokes will belong to deleted subsets
@@ -159,6 +161,12 @@ namespace TiltBrush
         public void QuickLoadRemaining()
         {
             m_bQuickLoad = true;
+        }
+
+        public void ClearPlayback()
+        {
+            m_StrokePlayback?.ClearPlayback();
+            m_drawer.Dispose();
         }
 
         public void AddStroke(Stroke stroke) { }

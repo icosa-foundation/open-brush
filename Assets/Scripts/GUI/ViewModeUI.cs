@@ -50,8 +50,11 @@ public class ViewModeUI : MonoBehaviour
             return;
         }
 
-        // Only relevant in the non-VR UI, and only while a sketch is actively playing back.
+        // Only relevant in the non-VR UI, and only while a sketch is actively playing back as
+        // it loads (RequestQuickLoad does nothing otherwise; sketch.scrub keeps playback alive
+        // after loading).
         bool showSkip = m_UiRoot != null && m_UiRoot.activeInHierarchy
+            && App.CurrentState == App.AppState.Loading
             && SketchMemoryScript.m_Instance != null
             && SketchMemoryScript.m_Instance.IsPlayingBack;
         if (m_SkipPlaybackButton.activeSelf != showSkip)

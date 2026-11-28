@@ -68,6 +68,10 @@ namespace TiltBrush
 
         public object Invoke(System.Object[] parameters)
         {
+            if (Endpoint.StartsWith("postprod.", StringComparison.Ordinal) && Endpoint != "postprod.load")
+            {
+                PostProductionSettings.BeginSession();
+            }
             return methodInfo.Invoke(instance, parameters);
         }
 
@@ -112,6 +116,18 @@ namespace TiltBrush
                 else if (paramType.ParameterType == typeof(Vector3))
                 {
                     paramValue = new Vector3(
+                        float.Parse(tokens[tokenIndex++]),
+                        float.Parse(tokens[tokenIndex++]),
+                        float.Parse(tokens[tokenIndex++])
+                    );
+                }
+                else if (paramType.ParameterType == typeof(Quaternion))
+                {
+                    // x,y,z,w - raw quaternion components, so callers can supply a directly
+                    // computed rotation instead of going through Euler angles (which have
+                    // their own composition-order/gimbal ambiguities at the API boundary).
+                    paramValue = new Quaternion(
+                        float.Parse(tokens[tokenIndex++]),
                         float.Parse(tokens[tokenIndex++]),
                         float.Parse(tokens[tokenIndex++]),
                         float.Parse(tokens[tokenIndex++])

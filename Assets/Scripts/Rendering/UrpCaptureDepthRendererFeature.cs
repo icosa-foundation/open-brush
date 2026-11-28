@@ -17,15 +17,17 @@ namespace TiltBrush
             public RTHandle target;
             public Material material;
             public bool copied;
+            public RenderPassEvent passEvent;
         }
 
         private static readonly Dictionary<Camera, CaptureRequest> s_Requests = new();
 
-        public static void BeginCapture(Camera camera, RenderTexture target, Material material)
+        public static void BeginCapture(Camera camera, RenderTexture target, Material material,
+            RenderPassEvent passEvent = RenderPassEvent.BeforeRenderingTransparents)
         {
             s_Requests.Add(camera, new CaptureRequest
             {
-                target = RTHandles.Alloc(target), material = material
+                target = RTHandles.Alloc(target), material = material, passEvent = passEvent
             });
         }
 
@@ -60,7 +62,7 @@ namespace TiltBrush
             public CaptureDepthPass(CaptureRequest request)
             {
                 m_Request = request;
-                renderPassEvent = RenderPassEvent.BeforeRenderingTransparents;
+                renderPassEvent = request.passEvent;
                 requiresIntermediateTexture = true;
             }
 

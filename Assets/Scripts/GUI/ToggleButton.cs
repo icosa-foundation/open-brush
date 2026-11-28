@@ -45,9 +45,9 @@ namespace TiltBrush
             {
                 SetButtonActivated(true);
 
-                if (m_ToggleOnDescription != "")
+                if (ToggleOnDescription != "")
                 {
-                    SetDescriptionText(m_ToggleOnDescription);
+                    SetDescriptionText(ToggleOnDescription);
                 }
                 if (m_ToggleOnTexture != null)
                 {
@@ -58,7 +58,7 @@ namespace TiltBrush
             {
                 SetButtonActivated(false);
 
-                if (m_ToggleOnDescription != "")
+                if (ToggleOnDescription != "")
                 {
                     SetDescriptionText(m_DefaultDescription);
                 }
